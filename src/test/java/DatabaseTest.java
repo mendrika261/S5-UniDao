@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 
 public class DatabaseTest {
     @Test
-
     void testPostgresSqlConnect() throws DatabaseException {
         Database<?> postgresSql = new PostgresSql<>();
         Service<?> service = postgresSql.connect(
