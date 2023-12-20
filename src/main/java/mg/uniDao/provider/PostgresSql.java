@@ -4,10 +4,10 @@ import mg.uniDao.core.GenericSqlDatabase;
 
 import java.util.HashMap;
 
-public class PostgresSql<T> extends GenericSqlDatabase<T> {
+public class PostgresSql extends GenericSqlDatabase {
 
     @Override
-    protected String createObjectSQL(String collectionName, HashMap<String, Object> attributes) {
+    protected String createSQL(String collectionName, HashMap<String, Object> attributes) {
         StringBuilder sql = new StringBuilder("INSERT INTO ")
                 .append(collectionName)
                 .append(" (");
@@ -18,5 +18,10 @@ public class PostgresSql<T> extends GenericSqlDatabase<T> {
         sql.delete(sql.length()-2, sql.length());
         sql.append(")");
         return sql.toString();
+    }
+
+    @Override
+    protected String readAllWithLimitSQL(String collectionName) {
+        return "SELECT * FROM \"" + collectionName + "\" LIMIT ? OFFSET ?";
     }
 }

@@ -3,18 +3,22 @@ package mg.uniDao.core;
 import mg.uniDao.exception.DaoException;
 import mg.uniDao.exception.DatabaseException;
 
+import javax.xml.crypto.Data;
+
 public class Service {
     private Object access;
-    private boolean transactional=true;
+    private boolean transactional;
     private boolean closed;
+    private Database database;
 
-    public Service(Object access, boolean transactional) throws DatabaseException {
+    public Service(Database database, Object access, boolean transactional) throws DatabaseException {
+        setDatabase(database);
         setAccess(access);
         setTransactional(transactional);
     }
 
-    public Service(Object access) throws DatabaseException {
-        setAccess(access);
+    public Service(Database database, Object access) throws DatabaseException {
+        new Service(database, access, true);
     }
 
     public void commit() throws DaoException {
@@ -28,7 +32,7 @@ public class Service {
         }
     }
 
-    public void close() {
+    private void close() {
         try {
             getAccess().getClass().getMethod("close").invoke(getAccess());
         } catch (Exception ignored) {}
@@ -66,5 +70,13 @@ public class Service {
 
     public void setClosed(boolean closed) {
         this.closed = closed;
+    }
+
+    public Database getDatabase() {
+        return database;
+    }
+
+    public void setDatabase(Database database) {
+        this.database = database;
     }
 }

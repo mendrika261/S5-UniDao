@@ -5,11 +5,12 @@ import mg.uniDao.exception.DatabaseException;
 
 import java.util.List;
 
-public interface Database<T> {
+public interface Database {
      void loadDriver() throws DatabaseException;
      Service connect(boolean transaction) throws DatabaseException;
-     void createObject(Service service, String collectionName, Object object) throws DaoException;
-     List<T> readAllObject(Service service, String collectionName, Class<?> className);
-     T readObject(Service service, String collectionName, Class<?> className);
-     void updateObject(Service service, Object object);
+     Service connect() throws DatabaseException;
+     void create(Service service, String collectionName, Object object) throws DaoException;
+     <T> List<T> readAll(Service service, String collectionName, Class<T> className, int page, int limit) throws DaoException;
+     <T> T read(Service service, String collectionName, Class<?> className);
+     void update(Service service, Object object);
 }

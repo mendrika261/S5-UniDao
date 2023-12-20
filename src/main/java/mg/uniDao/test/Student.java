@@ -1,6 +1,8 @@
 package mg.uniDao.test;
 
 import mg.uniDao.core.GenericDao;
+import mg.uniDao.core.Utils;
+import mg.uniDao.exception.DaoException;
 
 public class Student extends GenericDao {
     private String name;
@@ -29,5 +31,14 @@ public class Student extends GenericDao {
 
     public void setAge(int age) {
         this.age = age;
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return String.valueOf(Utils.getAttributes(this));
+        } catch (DaoException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
