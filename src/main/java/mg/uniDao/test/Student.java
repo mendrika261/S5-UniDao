@@ -3,9 +3,9 @@ package mg.uniDao.test;
 import mg.uniDao.core.GenericDao;
 
 public class Student extends GenericDao {
-    String name;
-    String surname;
-    int age;
+    private String name;
+    private String surname;
+    private int age;
 
     public String getName() {
         return name;
