@@ -11,8 +11,9 @@ public class GenericDao {
         service.getDatabase().create(service, getClass().getSimpleName().toLowerCase(), this);
     }
 
-    public static <T> List<T> readAllObject(Connection connection) {
-        return null;
+    public <T> List<T> readAllObject(Service service, Class<T> castType, int page, int limit)
+            throws DaoException {
+        return service.getDatabase().readAll(service, castType.getSimpleName().toLowerCase(), castType, page, limit);
     }
 
     public static <T> T readObject(Connection connection) {

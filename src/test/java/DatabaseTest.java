@@ -1,4 +1,5 @@
 import mg.uniDao.core.Database;
+import mg.uniDao.core.GenericDao;
 import mg.uniDao.core.Service;
 import mg.uniDao.exception.DaoException;
 import mg.uniDao.exception.DatabaseException;
@@ -19,6 +20,7 @@ public class DatabaseTest {
     @Test
     void testPostgresSqlConnect() throws DatabaseException, DaoException {
         assertNotNull(getService().getAccess(), "PostgresSql connect() failed");
+        getService().endConnection();
     }
 
     @Test
@@ -35,11 +37,12 @@ public class DatabaseTest {
     }
 
     @Test
-    void testReadAll() throws DatabaseException, DaoException {
+    void testReadAll() throws DatabaseException, DaoException, ClassNotFoundException {
         Database postgresSql = new PostgresSql();
         Service service = postgresSql.connect();
-        List<Student> studentList = postgresSql.readAll(service, "student", Student.class, 3, 10);
-        System.out.println(studentList.size());
+        List<Student> studentList = postgresSql.readAll(service, "student", Student.class, 1, 10);
+        studentList.size());
+        System.out.println(new Student().readAllObject(service, 1, 10).size());
         service.endConnection();
     }
 }

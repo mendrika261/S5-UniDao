@@ -82,7 +82,7 @@ public abstract class GenericSqlDatabase implements Database {
             if(!service.isTransactional())
                 service.endConnection();
         } catch (SQLException | IllegalAccessException | InvocationTargetException e) {
-            throw new DaoException("Cannot create object: " + object.getClass().getSimpleName() + attributes);
+            throw new DaoException(e.getMessage());
         }
     }
 
@@ -116,7 +116,7 @@ public abstract class GenericSqlDatabase implements Database {
             return objects;
         } catch (SQLException | NoSuchMethodException | InstantiationException | IllegalAccessException |
                  InvocationTargetException e) {
-            throw new RuntimeException(e);
+            throw new DaoException(e.getMessage());
         }
     }
 
