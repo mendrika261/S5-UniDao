@@ -2,7 +2,6 @@ package mg.uniDao.core;
 
 import mg.uniDao.exception.DaoException;
 import mg.uniDao.exception.DatabaseException;
-import mg.uniDao.test.Student;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -59,6 +58,15 @@ public abstract class GenericSqlDatabase implements Database {
         return connect(true);
     }
 
+    private void prepareStatement(PreparedStatement preparedStatement, HashMap<String, Object> attributes) throws IllegalAccessException, InvocationTargetException, DaoException {
+        int i = 1;
+        for (String key : attributes.keySet()) {
+            final Method preparedStatementSetter = Utils.getPreparedStatementSetter(attributes.get(key));
+            preparedStatementSetter.invoke(preparedStatement, i, attributes.get(key));
+            i++;
+        }
+    }
+
     protected abstract String createSQL(String collectionName, HashMap<String, Object> attributes);
 
     @Override
@@ -68,14 +76,7 @@ public abstract class GenericSqlDatabase implements Database {
         final String sql = createSQL(collectionName, attributes);
         try {
             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-
-            Method method;
-            int i = 1;
-            for (String key : attributes.keySet()) {
-                method = Utils.getPreparedStatementSetter(attributes.get(key));
-                method.invoke(preparedStatement, i, attributes.get(key));
-                i++;
-            }
+            prepareStatement(preparedStatement, attributes);
 
             preparedStatement.executeUpdate();
             preparedStatement.close();
@@ -86,27 +87,32 @@ public abstract class GenericSqlDatabase implements Database {
         }
     }
 
-    protected abstract String readAllWithLimitSQL(String collectionName);
+    private <T> T resultSetToObject(ResultSet resultSet, Class<T> className) throws SQLException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+        final Field[] fields = className.getDeclaredFields();
+        final T object = className.getDeclaredConstructor().newInstance();
+        for (Field field : fields) {
+            field.setAccessible(true);
+            field.set(object, resultSet.getObject(field.getName()));
+        }
+        return object;
+    }
+
+    protected abstract String findListWithLimitSQL(String collectionName, String extraCondition);
 
     @Override
-    public <T> List<T> readAll(Service service, String collectionName, Class<T> className, int page, int limit) throws DaoException {
+    public <T> List<T> findList(Service service, String collectionName, Class<T> className, int page, int limit, String extraCondition) throws DaoException {
         final Connection connection = (Connection) service.getAccess();
-        final String sql = readAllWithLimitSQL(collectionName);
+        final String sql = findListWithLimitSQL(collectionName, extraCondition);
         final List<T> objects = new ArrayList<T>();
 
         try {
             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setInt(1, limit);
             preparedStatement.setInt(2, (page - 1) * limit);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            Field[] methods = className.getDeclaredFields();
+            final ResultSet resultSet = preparedStatement.executeQuery();
 
             while (resultSet.next()) {
-                T object = className.getDeclaredConstructor().newInstance();
-                for (Field method : methods) {
-                    method.setAccessible(true);
-                    method.set(object, resultSet.getObject(method.getName()));
-                }
+                final T object = resultSetToObject(resultSet, className);
                 objects.add(object);
             }
 
@@ -120,9 +126,31 @@ public abstract class GenericSqlDatabase implements Database {
         }
     }
 
+    protected abstract String findSQL(String collectionName, HashMap<String, Object> attributes, String extraCondition);
+
     @Override
-    public <T> T read(Service service, String collectionName, Class<?> className) {
-        return null;
+    public <T> T find(Service service, String collectionName, Object condition, String extraCondition) throws DaoException {
+        final Connection connection = (Connection) service.getAccess();
+        final HashMap<String, Object> attributes = Utils.getAttributesNotNull(condition);
+        final String sql = findSQL(collectionName, attributes, extraCondition);
+
+        try {
+            final PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            prepareStatement(preparedStatement, attributes);
+            final ResultSet resultSet = preparedStatement.executeQuery();
+
+            T object = null;
+            if(resultSet.next())
+                object = resultSetToObject(resultSet, (Class<T>) condition.getClass());
+
+            resultSet.close();
+            preparedStatement.close();
+
+            return object;
+        } catch (SQLException | NoSuchMethodException | InstantiationException | IllegalAccessException |
+                InvocationTargetException e) {
+            throw new DaoException(e.getMessage());
+        }
     }
 
     @Override

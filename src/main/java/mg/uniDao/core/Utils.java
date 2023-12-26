@@ -13,23 +13,44 @@ public class Utils {
         return string.substring(0,1).toUpperCase()+string.substring(1);
     }
 
+    static Object getFieldValue(Object object, String fieldName) throws DaoException {
+        Object fieldValue;
+        try {
+            Method getter = object.getClass().getMethod("get" + Utils.upperFirst(fieldName));
+            fieldValue = getter.invoke(object);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {
+            Field field;
+            try {
+                field = object.getClass().getDeclaredField(fieldName);
+            } catch (NoSuchFieldException ignored1) {
+                throw new DaoException("Cannot find field: " + fieldName + " in " + object.getClass().getName());
+            }
+            field.setAccessible(true);
+            try {
+                fieldValue = field.get(object);
+            } catch (IllegalAccessException ignored2) {
+                throw new DaoException("Cannot access field: " + fieldName + " in " + object.getClass().getName());
+            }
+        }
+        return fieldValue;
+    }
+
     public static HashMap<String, Object> getAttributes(Object object) throws DaoException {
         HashMap<String, Object> attributes = new HashMap<>();
         for(final Field field: object.getClass().getDeclaredFields()) {
             final String fieldName = field.getName();
-            Object fieldValue;
-            try {
-                Method getter = object.getClass().getMethod("get" + Utils.upperFirst(fieldName));
-                fieldValue = getter.invoke(object);
-            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {
-                field.setAccessible(true);
-                try {
-                    fieldValue = field.get(object);
-                } catch (IllegalAccessException ignored2) {
-                    throw new DaoException("Cannot access field: " + fieldName + " in " + object.getClass().getName());
-                }
-            }
-            attributes.put(fieldName, fieldValue);
+            attributes.put(fieldName, getFieldValue(object, fieldName));
+        }
+        return attributes;
+    }
+
+    public static HashMap<String, Object> getAttributesNotNull(Object object) throws DaoException {
+        HashMap<String, Object> attributes = new HashMap<>();
+        for(final Field field: object.getClass().getDeclaredFields()) {
+            final String fieldName = field.getName();
+            Object fieldValue = getFieldValue(object, fieldName);
+            if (fieldValue != null)
+                attributes.put(fieldName, fieldValue);
         }
         return attributes;
     }
