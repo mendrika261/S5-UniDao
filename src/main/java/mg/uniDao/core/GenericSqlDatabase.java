@@ -180,6 +180,26 @@ public abstract class GenericSqlDatabase implements Database {
         }
     }
 
+    protected abstract String deleteSQL(String collectionName, HashMap<String, Object> conditions, String extraCondition);
+
+    @Override
+    public void delete(Service service, String collectionName, Object condition, String extraCondition) throws DaoException {
+        final Connection connection = (Connection) service.getAccess();
+        final HashMap<String, Object> conditions = Utils.getAttributesNotNull(condition);
+        final String sql = deleteSQL(collectionName, conditions, extraCondition);
+
+        try {
+            final PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            prepareStatement(preparedStatement, conditions, 1);
+            preparedStatement.executeUpdate();
+            preparedStatement.close();
+            if(!service.isTransactional())
+                service.endConnection();
+        } catch (SQLException | IllegalAccessException | InvocationTargetException e) {
+            throw new DaoException(e.getMessage());
+        }
+    }
+
 
     public String getUrl() {
         return url;

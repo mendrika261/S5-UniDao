@@ -22,4 +22,8 @@ public class GenericDao {
     public void update(Service service, Object condition, String extraCondition) throws DaoException {
         service.getDatabase().update(service, getClass().getSimpleName().toLowerCase(), condition, this, extraCondition);
     }
+
+    public void delete(Service service, String extraCondition) throws DaoException {
+        service.getDatabase().delete(service, getClass().getSimpleName().toLowerCase(), this, extraCondition);
+    }
 }

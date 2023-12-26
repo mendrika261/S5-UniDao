@@ -67,4 +67,14 @@ public class DatabaseTest {
         student.update(service, condition, "");
         service.endConnection();
     }
+
+    @Test
+    void testDelete() throws DatabaseException, DaoException {
+        Database postgresSql = new PostgresSql();
+        Service service = postgresSql.connect();
+        Student student = new Student();
+        student.setAge(11);
+        student.delete(service, "");
+        service.endConnection();
+    }
 }

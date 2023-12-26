@@ -52,4 +52,9 @@ public class PostgresSql extends GenericSqlDatabase {
         }
         return "UPDATE \"" + collectionName + "\" SET " + setSQL + " WHERE " + toConditionSQL(conditions) + " " + extraCondition;
     }
+
+    @Override
+    protected String deleteSQL(String collectionName, HashMap<String, Object> conditions, String extraCondition) {
+        return "DELETE FROM \"" + collectionName + "\" WHERE " + toConditionSQL(conditions) + " " + extraCondition;
+    }
 }
