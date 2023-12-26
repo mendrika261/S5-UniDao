@@ -19,6 +19,7 @@ public class GenericDao {
         return service.getDatabase().find(service, getClass().getSimpleName().toLowerCase(), this, extraCondition);
     }
 
-    public void update(Connection connection) {
+    public void update(Service service, Object condition, String extraCondition) throws DaoException {
+        service.getDatabase().update(service, getClass().getSimpleName().toLowerCase(), condition, this, extraCondition);
     }
 }

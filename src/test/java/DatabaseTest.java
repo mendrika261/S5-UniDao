@@ -13,15 +13,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class DatabaseTest {
-    Service getService() throws DatabaseException {
-        Database postgresSql = new PostgresSql();
-        return postgresSql.connect(false);
-    }
 
     @Test
     void testPostgresSqlConnect() throws DatabaseException, DaoException {
-        assertNotNull(getService().getAccess(), "PostgresSql connect() failed");
-        getService().endConnection();
+        Database postgresSql = new PostgresSql();
+        Service service = postgresSql.connect(false);
+        assertNotNull(service.getAccess(), "PostgresSql connect() failed");
+        service.endConnection();
     }
 
     @Test
@@ -40,8 +38,10 @@ public class DatabaseTest {
     void testFindList() throws DatabaseException, DaoException {
         Database postgresSql = new PostgresSql();
         Service service = postgresSql.connect();
-        List<Student> studentList = postgresSql.findList(service, "student", Student.class, 1, 10, "");
-        assertEquals(studentList.size(), Student.findList(service, Student.class, 1, 10, "").size(), "ReadAll failed");
+        List<Student> studentList = postgresSql.findList(service, "student", Student.class,
+                1, 10, "");
+        assertEquals(studentList.size(), Student.findList(service, Student.class, 1, 10,
+                "").size(), "ReadAll failed");
         service.endConnection();
     }
 
@@ -53,6 +53,18 @@ public class DatabaseTest {
         student.setAge(10);
         student = student.find(service, "");
         assertNotNull(student, "Read failed");
+        service.endConnection();
+    }
+
+    @Test
+    void testUpdate() throws DatabaseException, DaoException {
+        Database postgresSql = new PostgresSql();
+        Service service = postgresSql.connect();
+        Student condition = new Student();
+        condition.setAge(10);
+        Student student = new Student();
+        student.setAge(11);
+        student.update(service, condition, "");
         service.endConnection();
     }
 }
