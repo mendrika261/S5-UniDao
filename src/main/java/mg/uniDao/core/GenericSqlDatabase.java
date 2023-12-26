@@ -73,7 +73,7 @@ public abstract class GenericSqlDatabase implements Database {
     @Override
     public void create(Service service, String collectionName, Object object) throws DaoException {
         final Connection connection = (Connection) service.getAccess();
-        final HashMap<String, Object> attributes = Utils.getAttributes(object);
+        final HashMap<String, Object> attributes = Utils.getAttributesAnnotatedName(object);
         final String sql = createSQL(collectionName, attributes);
         try {
             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
@@ -94,7 +94,7 @@ public abstract class GenericSqlDatabase implements Database {
         final T object = className.getDeclaredConstructor().newInstance();
         for (Field field : fields) {
             field.setAccessible(true);
-            field.set(object, resultSet.getObject(field.getName()));
+            field.set(object, resultSet.getObject(Utils.getAnnotatedFieldName(field)));
         }
         return object;
     }
@@ -135,7 +135,7 @@ public abstract class GenericSqlDatabase implements Database {
     public <T> T find(Service service, String collectionName, Object condition, String extraCondition)
             throws DaoException {
         final Connection connection = (Connection) service.getAccess();
-        final HashMap<String, Object> conditions = Utils.getAttributesNotNull(condition);
+        final HashMap<String, Object> conditions = Utils.getAttributesNotNullAnnotatedName(condition);
         final String sql = findSQL(collectionName, conditions, extraCondition);
 
         try {
@@ -163,8 +163,8 @@ public abstract class GenericSqlDatabase implements Database {
     @Override
     public void update(Service service, String collectionName, Object condition, Object object, String extraCondition) throws DaoException {
         final Connection connection = (Connection) service.getAccess();
-        final HashMap<String, Object> values = Utils.getAttributesNotNull(object);
-        final HashMap<String, Object> conditions = Utils.getAttributesNotNull(condition);
+        final HashMap<String, Object> values = Utils.getAttributesNotNullAnnotatedName(object);
+        final HashMap<String, Object> conditions = Utils.getAttributesNotNullAnnotatedName(condition);
         final String sql = updateSQL(collectionName, values, conditions, extraCondition);
 
         try {
@@ -185,7 +185,7 @@ public abstract class GenericSqlDatabase implements Database {
     @Override
     public void delete(Service service, String collectionName, Object condition, String extraCondition) throws DaoException {
         final Connection connection = (Connection) service.getAccess();
-        final HashMap<String, Object> conditions = Utils.getAttributesNotNull(condition);
+        final HashMap<String, Object> conditions = Utils.getAttributesNotNullAnnotatedName(condition);
         final String sql = deleteSQL(collectionName, conditions, extraCondition);
 
         try {

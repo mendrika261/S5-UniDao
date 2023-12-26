@@ -13,7 +13,7 @@ public class Utils {
         return string.substring(0,1).toUpperCase()+string.substring(1);
     }
 
-    static Object getFieldValue(Object object, String fieldName) throws DaoException {
+    private static Object getFieldValue(Object object, String fieldName) throws DaoException {
         Object fieldValue;
         try {
             Method getter = object.getClass().getMethod("get" + Utils.upperFirst(fieldName));
@@ -44,11 +44,26 @@ public class Utils {
         return attributes;
     }
 
-    public static HashMap<String, Object> getAttributesNotNull(Object object) throws DaoException {
+    public static String getAnnotatedFieldName(Field field) {
+        if(field.isAnnotationPresent(mg.uniDao.annotation.Field.class))
+            return field.getAnnotation(mg.uniDao.annotation.Field.class).name();
+        return field.getName();
+    }
+
+    public static HashMap<String, Object> getAttributesAnnotatedName(Object object) throws DaoException {
         HashMap<String, Object> attributes = new HashMap<>();
         for(final Field field: object.getClass().getDeclaredFields()) {
-            final String fieldName = field.getName();
-            Object fieldValue = getFieldValue(object, fieldName);
+            final String fieldName = getAnnotatedFieldName(field);
+            attributes.put(fieldName, getFieldValue(object, field.getName()));
+        }
+        return attributes;
+    }
+
+    public static HashMap<String, Object> getAttributesNotNullAnnotatedName(Object object) throws DaoException {
+        HashMap<String, Object> attributes = new HashMap<>();
+        for(final Field field: object.getClass().getDeclaredFields()) {
+            final String fieldName = getAnnotatedFieldName(field);
+            Object fieldValue = getFieldValue(object, field.getName());
             if (fieldValue != null)
                 attributes.put(fieldName, fieldValue);
         }

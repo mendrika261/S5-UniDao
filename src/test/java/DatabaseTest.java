@@ -30,7 +30,7 @@ public class DatabaseTest {
         student.setAge(10);
         student.setName("Name");
         student.setSurname("Surname");
-        Assertions.assertThrows(DaoException.class, () -> postgresSql.create(service, "student", student));
+        postgresSql.create(service, "student", student);
         service.endConnection();
     }
 
@@ -40,8 +40,9 @@ public class DatabaseTest {
         Service service = postgresSql.connect();
         List<Student> studentList = postgresSql.findList(service, "student", Student.class,
                 1, 10, "");
-        assertEquals(studentList.size(), Student.findList(service, Student.class, 1, 10,
-                "").size(), "ReadAll failed");
+        System.out.println(studentList);
+        assertEquals(studentList.size(), new Student().findList(service, 1, 10, "").size(),
+                "ReadAll failed");
         service.endConnection();
     }
 
@@ -52,6 +53,7 @@ public class DatabaseTest {
         Student student = new Student();
         student.setAge(10);
         student = student.find(service, "");
+        System.out.println(student);
         assertNotNull(student, "Read failed");
         service.endConnection();
     }

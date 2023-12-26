@@ -1,10 +1,14 @@
 package mg.uniDao.test;
 
+import mg.uniDao.annotation.Collection;
+import mg.uniDao.annotation.Field;
 import mg.uniDao.core.GenericDao;
 import mg.uniDao.core.Utils;
 import mg.uniDao.exception.DaoException;
 
+@Collection(name = "student")
 public class Student extends GenericDao {
+    @Field(name = "name")
     private String name;
     private String surname;
     private int age;
@@ -37,8 +41,7 @@ public class Student extends GenericDao {
     public String toString() {
         try {
             return String.valueOf(Utils.getAttributes(this));
-        } catch (DaoException e) {
-            throw new RuntimeException(e);
-        }
+        } catch (DaoException ignored) {}
+        return null;
     }
 }
