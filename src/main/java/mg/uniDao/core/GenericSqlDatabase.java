@@ -72,16 +72,11 @@ public abstract class GenericSqlDatabase implements Database {
         }
     }
 
-    protected abstract String createSQL(String collectionName, HashMap<String, Object> attributes);
-
-    @Override
-    public void create(Service service, String collectionName, Object object) throws DaoException {
+    public void execute(Service service, String query, HashMap<String, Object> parameters) throws DaoException {
         final Connection connection = (Connection) service.getAccess();
-        final HashMap<String, Object> attributes = Utils.getAttributesAnnotatedName(object);
-        final String sql = createSQL(collectionName, attributes);
         try {
-            final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            prepareStatement(preparedStatement, attributes, 1);
+            final PreparedStatement preparedStatement = connection.prepareStatement(query);
+            prepareStatement(preparedStatement, parameters, 1);
 
             preparedStatement.executeUpdate();
             preparedStatement.close();
@@ -90,6 +85,15 @@ public abstract class GenericSqlDatabase implements Database {
         } catch (SQLException | IllegalAccessException | InvocationTargetException e) {
             throw new DaoException(e.getMessage());
         }
+    }
+
+    protected abstract String createSQL(String collectionName, HashMap<String, Object> attributes);
+
+    @Override
+    public void create(Service service, String collectionName, Object object) throws DaoException {
+        final HashMap<String, Object> attributes = Utils.getAttributesAnnotatedName(object);
+        final String sql = createSQL(collectionName, attributes);
+        execute(service, sql, attributes);
     }
 
     private <T> T resultSetToObject(ResultSet resultSet, Class<T> className) throws SQLException, NoSuchMethodException,
@@ -164,42 +168,21 @@ public abstract class GenericSqlDatabase implements Database {
 
     @Override
     public void update(Service service, String collectionName, Object condition, Object object, String extraCondition) throws DaoException {
-        final Connection connection = (Connection) service.getAccess();
-        final HashMap<String, Object> values = Utils.getAttributesNotNullAnnotatedName(object);
+        final HashMap<String, Object> values = Utils.getAttributesNotNullAnnotatedName(object, true);
         final HashMap<String, Object> conditions = Utils.getAttributesNotNullAnnotatedName(condition);
         final String sql = updateSQL(collectionName, values, conditions, extraCondition);
-
-        try {
-            final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            prepareStatement(preparedStatement, values, 1);
-            prepareStatement(preparedStatement, conditions, values.size()+1);
-            preparedStatement.executeUpdate();
-            preparedStatement.close();
-            if(!service.isTransactional())
-                service.endConnection();
-        } catch (SQLException | IllegalAccessException | InvocationTargetException e) {
-            throw new DaoException(e.getMessage());
-        }
+        values.putAll(conditions);
+        execute(service, sql, values);
     }
 
     protected abstract String deleteSQL(String collectionName, HashMap<String, Object> conditions, String extraCondition);
 
     @Override
     public void delete(Service service, String collectionName, Object condition, String extraCondition) throws DaoException {
-        final Connection connection = (Connection) service.getAccess();
-        final HashMap<String, Object> conditions = Utils.getAttributesNotNullAnnotatedName(condition);
+        final HashMap<String, Object> conditions = Utils.getAttributesNotNullAnnotatedName(condition, true);
         final String sql = deleteSQL(collectionName, conditions, extraCondition);
-
-        try {
-            final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            prepareStatement(preparedStatement, conditions, 1);
-            preparedStatement.executeUpdate();
-            preparedStatement.close();
-            if(!service.isTransactional())
-                service.endConnection();
-        } catch (SQLException | IllegalAccessException | InvocationTargetException e) {
-            throw new DaoException(e.getMessage());
-        }
+        System.out.println(sql);
+        execute(service, sql, conditions);
     }
 
     protected abstract String getNextSequenceValueSql(String sequenceName);

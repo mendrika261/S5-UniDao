@@ -82,9 +82,14 @@ public class Utils {
         return attributes;
     }
 
-    public static HashMap<String, Object> getAttributesNotNullAnnotatedName(Object object) throws DaoException {
+    public static HashMap<String, Object> getAttributesNotNullAnnotatedName(Object object, boolean throwPrimitiveType)
+            throws DaoException {
         final HashMap<String, Object> attributes = new HashMap<>();
-        for(final Field field: getDeclaredFields(object)) {
+        final Field[] fields = getDeclaredFields(object);
+        for(final Field field: fields) {
+            if(throwPrimitiveType && field.getType().isPrimitive())
+                throw new DaoException("Object condition work only with object without primitive field: \n" +
+                        Arrays.toString(Arrays.stream(fields).toArray()));
             final String fieldName = getAnnotatedFieldName(field);
             final Object fieldValue = getFieldValue(object, field);
             if (fieldValue != null)
@@ -93,6 +98,9 @@ public class Utils {
         return attributes;
     }
 
+    public static HashMap<String, Object> getAttributesNotNullAnnotatedName(Object object) throws DaoException {
+        return getAttributesNotNullAnnotatedName(object, false);
+    }
 
     public static Method getPreparedStatementSetter(Object object) throws DaoException {
         final Class<?> objectClass = object.getClass();

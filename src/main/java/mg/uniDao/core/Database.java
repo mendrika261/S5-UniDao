@@ -3,6 +3,7 @@ package mg.uniDao.core;
 import mg.uniDao.exception.DaoException;
 import mg.uniDao.exception.DatabaseException;
 
+import java.util.HashMap;
 import java.util.List;
 
 public interface Database {

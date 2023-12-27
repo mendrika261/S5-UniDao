@@ -74,7 +74,7 @@ public class DatabaseTest {
         Database postgresSql = new PostgresSql();
         Service service = postgresSql.connect();
         Student student = new Student();
-        student.setAge(11);
+        student.setId("30");
         student.delete(service, "");
         service.endConnection();
     }
