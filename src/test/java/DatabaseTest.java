@@ -3,8 +3,7 @@ import mg.uniDao.core.Service;
 import mg.uniDao.exception.DaoException;
 import mg.uniDao.exception.DatabaseException;
 import mg.uniDao.provider.PostgresSql;
-import mg.uniDao.test.Student;
-import org.junit.jupiter.api.Assertions;
+import dao.Student;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -30,7 +29,7 @@ public class DatabaseTest {
         student.setAge(10);
         student.setName("Name");
         student.setSurname("Surname");
-        postgresSql.create(service, "student", student);
+        student.save(service);
         service.endConnection();
     }
 

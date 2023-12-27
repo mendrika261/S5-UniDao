@@ -57,4 +57,9 @@ public class PostgresSql extends GenericSqlDatabase {
     protected String deleteSQL(String collectionName, HashMap<String, Object> conditions, String extraCondition) {
         return "DELETE FROM \"" + collectionName + "\" WHERE " + toConditionSQL(conditions) + " " + extraCondition;
     }
+
+    @Override
+    protected String getNextSequenceValueSql(String sequenceName) {
+        return "SELECT nextval('" + sequenceName + "') AS result";
+    }
 }

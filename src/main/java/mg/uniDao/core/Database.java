@@ -14,4 +14,5 @@ public interface Database {
      <T> T find(Service service, String collectionName, Object condition, String extraCondition) throws DaoException;
      void update(Service service, String collectionName, Object condition, Object object, String extraCondition) throws DaoException;
      void delete(Service service, String collectionName, Object condition, String extraCondition) throws DaoException;
+     String getNextSequenceValue(Service service, String sequenceName) throws DaoException;
 }

@@ -1,19 +1,43 @@
 package mg.uniDao.core;
 
 import mg.uniDao.annotation.Collection;
+import mg.uniDao.annotation.AutoSequence;
+
 import mg.uniDao.exception.DaoException;
 
-import java.sql.Connection;
+import java.lang.reflect.Field;
 import java.util.List;
 
 public class GenericDao {
+
     private String getCollectionName() {
         if (getClass().isAnnotationPresent(Collection.class))
             return getClass().getAnnotation(Collection.class).name();
         return getClass().getSimpleName().toLowerCase();
     }
 
+    private String getNextSequence(Service service, Field field) throws DaoException {
+        final AutoSequence autoSequence = field.getAnnotation(AutoSequence.class);
+        final String sequenceName = autoSequence.name().isEmpty() ? getCollectionName() + "_seq" : autoSequence.name();
+        return Utils.fillSequence(autoSequence.prefix(), service.getDatabase().getNextSequenceValue(service, sequenceName), autoSequence.length());
+    }
+
+    private void fillAutoSequence(Service service) throws DaoException {
+        final Field[] fields = Utils.getDeclaredFields(this);
+        for(Field field: fields) {
+            if(field.isAnnotationPresent(AutoSequence.class)) {
+                final String nextSequence = getNextSequence(service, field);
+                try {
+                    Utils.setFieldValue(this, field, nextSequence);
+                } catch (IllegalArgumentException e) {
+                    throw new DaoException("Auto sequence field: '" + field.getName() + "' must be a String");
+                }
+            }
+        }
+    }
+
     public void save(Service service) throws DaoException {
+        fillAutoSequence(service);
         service.getDatabase().create(service, getCollectionName(), this);
     }
 
@@ -32,5 +56,13 @@ public class GenericDao {
 
     public void delete(Service service, String extraCondition) throws DaoException {
         service.getDatabase().delete(service, getCollectionName(), this, extraCondition);
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return String.valueOf(Utils.getAttributes(this));
+        } catch (DaoException ignored) {}
+        return null;
     }
 }

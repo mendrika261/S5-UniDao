@@ -1,14 +1,17 @@
-package mg.uniDao.test;
+package dao;
 
+import mg.uniDao.annotation.AutoSequence;
 import mg.uniDao.annotation.Collection;
 import mg.uniDao.annotation.Field;
 import mg.uniDao.core.GenericDao;
-import mg.uniDao.core.Utils;
-import mg.uniDao.exception.DaoException;
 
 @Collection(name = "student")
 public class Student extends GenericDao {
-    @Field(name = "name")
+    @AutoSequence(prefix = "ETU", length = 8)
+    @Field(name = "id2")
+    private String id;
+
+    @Field(name = "nam")
     private String name;
     private String surname;
     private int age;
@@ -35,13 +38,5 @@ public class Student extends GenericDao {
 
     public void setAge(int age) {
         this.age = age;
-    }
-
-    @Override
-    public String toString() {
-        try {
-            return String.valueOf(Utils.getAttributes(this));
-        } catch (DaoException ignored) {}
-        return null;
     }
 }

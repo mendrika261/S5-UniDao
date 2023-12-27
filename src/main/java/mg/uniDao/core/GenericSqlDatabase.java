@@ -59,11 +59,15 @@ public abstract class GenericSqlDatabase implements Database {
     }
 
     private void prepareStatement(PreparedStatement preparedStatement, HashMap<String, Object> attributes, int start)
-            throws IllegalAccessException, InvocationTargetException, DaoException {
+            throws IllegalAccessException, InvocationTargetException, DaoException, SQLException {
         int i = start;
         for (String key : attributes.keySet()) {
-            final Method preparedStatementSetter = Utils.getPreparedStatementSetter(attributes.get(key));
-            preparedStatementSetter.invoke(preparedStatement, i, attributes.get(key));
+            if (attributes.get(key) == null) {
+                preparedStatement.setNull(i, Types.NULL);
+            } else {
+                final Method preparedStatementSetter = Utils.getPreparedStatementSetter(attributes.get(key));
+                preparedStatementSetter.invoke(preparedStatement, i, attributes.get(key));
+            }
             i++;
         }
     }
@@ -89,13 +93,11 @@ public abstract class GenericSqlDatabase implements Database {
     }
 
     private <T> T resultSetToObject(ResultSet resultSet, Class<T> className) throws SQLException, NoSuchMethodException,
-            IllegalAccessException, InvocationTargetException, InstantiationException {
-        final Field[] fields = className.getDeclaredFields();
+            IllegalAccessException, InvocationTargetException, InstantiationException, DaoException {
+        final Field[] fields = Utils.getDeclaredFields(className);
         final T object = className.getDeclaredConstructor().newInstance();
-        for (Field field : fields) {
-            field.setAccessible(true);
-            field.set(object, resultSet.getObject(Utils.getAnnotatedFieldName(field)));
-        }
+        for (Field field : fields)
+            Utils.setFieldValue(object, field, resultSet.getObject(Utils.getAnnotatedFieldName(field)));
         return object;
     }
 
@@ -200,6 +202,25 @@ public abstract class GenericSqlDatabase implements Database {
         }
     }
 
+    protected abstract String getNextSequenceValueSql(String sequenceName);
+
+    public String getNextSequenceValue(Service service, String sequenceName) throws DaoException {
+        String sql = getNextSequenceValueSql(sequenceName);
+
+        try {
+            final PreparedStatement preparedStatement = ((Connection) service.getAccess()).prepareStatement(sql);
+            final ResultSet resultSet = preparedStatement.executeQuery();
+
+            resultSet.next();
+            final String result = resultSet.getString(1);
+
+            resultSet.close();
+            preparedStatement.close();
+            return result;
+        } catch (SQLException e) {
+            throw new DaoException(e.getMessage());
+        }
+    }
 
     public String getUrl() {
         return url;
