@@ -6,6 +6,7 @@ import mg.uniDao.provider.PostgresSql;
 import dao.Student;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,11 +23,20 @@ public class DatabaseTest {
     }
 
     @Test
+    void testCreateCollection() throws DatabaseException, DaoException {
+        Database postgresSql = new PostgresSql();
+        Service service = postgresSql.connect();
+        Student student = new Student();
+        student.createCollection(service);
+        service.endConnection();
+    }
+
+    @Test
     void testCreateObject() throws DatabaseException, DaoException {
         Database postgresSql = new PostgresSql();
         Service service = postgresSql.connect();
         Student student = new Student();
-        student.setAge(10);
+        student.setBirthdate(LocalDate.now());
         student.setName("Name");
         student.setSurname("Surname");
         student.save(service);
@@ -50,7 +60,7 @@ public class DatabaseTest {
         Database postgresSql = new PostgresSql();
         Service service = postgresSql.connect();
         Student student = new Student();
-        student.setAge(10);
+        student.setBirthdate(LocalDate.now());
         student = student.find(service, "");
         System.out.println(student);
         assertNotNull(student, "Read failed");
@@ -62,9 +72,9 @@ public class DatabaseTest {
         Database postgresSql = new PostgresSql();
         Service service = postgresSql.connect();
         Student condition = new Student();
-        condition.setAge(10);
+        condition.setBirthdate(LocalDate.now());
         Student student = new Student();
-        student.setAge(11);
+        student.setBirthdate(LocalDate.now());
         student.update(service, condition, "");
         service.endConnection();
     }

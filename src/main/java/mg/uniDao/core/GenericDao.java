@@ -4,11 +4,24 @@ import mg.uniDao.annotation.Collection;
 import mg.uniDao.annotation.AutoSequence;
 
 import mg.uniDao.exception.DaoException;
+import mg.uniDao.exception.DatabaseException;
 
 import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.List;
 
 public class GenericDao {
+    private final HashMap<String, String> primaryKeys = new HashMap<>();
+
+    public GenericDao() {
+        final Field[] fields = Utils.getDeclaredFields(this);
+        for(Field field: fields) {
+            if (field.isAnnotationPresent(mg.uniDao.annotation.Field.class)
+                    && field.getAnnotation(mg.uniDao.annotation.Field.class).isPrimaryKey()) {
+                primaryKeys.put(field.getName(), field.getAnnotation(mg.uniDao.annotation.Field.class).name());
+            }
+        }
+    }
 
     private String getCollectionName() {
         if (getClass().isAnnotationPresent(Collection.class))
@@ -58,10 +71,21 @@ public class GenericDao {
         service.getDatabase().delete(service, getCollectionName(), this, extraCondition);
     }
 
+
+    public void createCollection(Service service) throws DaoException, DatabaseException {
+        service.getDatabase().createCollection(service, getCollectionName(), this);
+        addPrimaryKey(service);
+    }
+
+    private void addPrimaryKey(Service service) throws DaoException {
+        service.getDatabase().addPrimaryKey(service, getCollectionName(), primaryKeys.values().stream().toList());
+    }
+
+
     @Override
     public String toString() {
         try {
-            return String.valueOf(Utils.getAttributes(this));
+            return String.valueOf(Utils.getFieldsNamesWithValues(this));
         } catch (DaoException ignored) {}
         return null;
     }

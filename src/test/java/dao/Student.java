@@ -5,16 +5,18 @@ import mg.uniDao.annotation.Collection;
 import mg.uniDao.annotation.Field;
 import mg.uniDao.core.GenericDao;
 
+import java.time.LocalDate;
+
 @Collection(name = "student")
 public class Student extends GenericDao {
     @AutoSequence(prefix = "ETU", length = 8)
-    @Field(name = "id2")
+    @Field(name = "id", isPrimaryKey = true)
     private String id;
-
-    @Field(name = "nam")
+    @Field(name = "name")
     private String name;
     private String surname;
-    private int age;
+    private LocalDate birthdate;
+    private double average;
 
     public String getName() {
         return name;
@@ -32,12 +34,12 @@ public class Student extends GenericDao {
         this.surname = surname;
     }
 
-    public int getAge() {
-        return age;
+    public LocalDate getBirthdate() {
+        return birthdate;
     }
 
-    public void setAge(int age) {
-        this.age = age;
+    public void setBirthdate(LocalDate birthdate) {
+        this.birthdate = birthdate;
     }
 
     public String getId() {
@@ -46,5 +48,13 @@ public class Student extends GenericDao {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public double getAverage() {
+        return average;
+    }
+
+    public void setAverage(double average) {
+        this.average = average;
     }
 }

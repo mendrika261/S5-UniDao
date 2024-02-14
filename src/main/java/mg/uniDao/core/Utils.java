@@ -58,7 +58,7 @@ public class Utils {
         return allFields;
     }
 
-    public static HashMap<String, Object> getAttributes(Object object) throws DaoException {
+    public static HashMap<String, Object> getFieldsNamesWithValues(Object object) throws DaoException {
         final HashMap<String, Object> attributes = new HashMap<>();
         for(final Field field: getDeclaredFields(object)) {
             final String fieldName = field.getName();
@@ -73,7 +73,7 @@ public class Utils {
         return field.getName();
     }
 
-    public static HashMap<String, Object> getAttributesAnnotatedName(Object object) throws DaoException {
+    public static HashMap<String, Object> getFieldsAnnotatedNameWithValues(Object object) throws DaoException {
         final HashMap<String, Object> attributes = new HashMap<>();
         for(final Field field: getDeclaredFields(object)) {
             final String fieldName = getAnnotatedFieldName(field);
@@ -82,7 +82,7 @@ public class Utils {
         return attributes;
     }
 
-    public static HashMap<String, Object> getAttributesNotNullAnnotatedName(Object object, boolean throwPrimitiveType)
+    public static HashMap<String, Object> getFieldsNotNullAnnotatedNameWithValues(Object object, boolean throwPrimitiveType)
             throws DaoException {
         final HashMap<String, Object> attributes = new HashMap<>();
         final Field[] fields = getDeclaredFields(object);
@@ -98,27 +98,20 @@ public class Utils {
         return attributes;
     }
 
-    public static HashMap<String, Object> getAttributesNotNullAnnotatedName(Object object) throws DaoException {
-        return getAttributesNotNullAnnotatedName(object, false);
-    }
-
-    public static Method getPreparedStatementSetter(Object object) throws DaoException {
-        final Class<?> objectClass = object.getClass();
-        try {
-            return switch (objectClass.getSimpleName()) {
-                case "Integer" -> PreparedStatement.class.getMethod("setInt", int.class, int.class);
-                case "Double" -> PreparedStatement.class.getMethod("setDouble", int.class, double.class);
-                case "Boolean" -> PreparedStatement.class.getMethod("setBoolean", int.class, boolean.class);
-                default -> PreparedStatement.class.getMethod("set" +
-                        Utils.upperFirst(objectClass.getSimpleName()), int.class, objectClass);
-            };
-        } catch (NoSuchMethodException e) {
-            throw new DaoException(objectClass.getName()
-                    + " is not a valid type of attribute for a dao object OR not yet supported");
-        }
+    public static HashMap<String, Object> getFieldsNotNullAnnotatedNameWithValues(Object object) throws DaoException {
+        return getFieldsNotNullAnnotatedNameWithValues(object, false);
     }
 
     public static String fillSequence(String prefix, String value, int length) {
         return prefix + "0".repeat(Math.max(0, length - value.length() - prefix.length())) + value;
+    }
+
+    public static HashMap<String, String> getFieldsAnnotatedNameWithTypes(Object object) {
+        final HashMap<String, String> attributes = new HashMap<>();
+        for(final Field field: getDeclaredFields(object)) {
+            final String fieldName = getAnnotatedFieldName(field);
+            attributes.put(fieldName, field.getType().getName());
+        }
+        return attributes;
     }
 }

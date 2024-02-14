@@ -9,4 +9,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface Field {
     String name();
+    boolean isPrimaryKey() default false;
 }

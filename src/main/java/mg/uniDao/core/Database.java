@@ -3,7 +3,6 @@ package mg.uniDao.core;
 import mg.uniDao.exception.DaoException;
 import mg.uniDao.exception.DatabaseException;
 
-import java.util.HashMap;
 import java.util.List;
 
 public interface Database {
@@ -16,4 +15,8 @@ public interface Database {
      void update(Service service, String collectionName, Object condition, Object object, String extraCondition) throws DaoException;
      void delete(Service service, String collectionName, Object condition, String extraCondition) throws DaoException;
      String getNextSequenceValue(Service service, String sequenceName) throws DaoException;
+
+
+     void createCollection(Service service, String collectionName, Object object) throws DaoException, DatabaseException;
+     void addPrimaryKey(Service service, String collectionName, List<String> primaryKeyColumns) throws DaoException;
 }
