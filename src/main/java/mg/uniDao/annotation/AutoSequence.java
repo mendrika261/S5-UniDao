@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface AutoSequence {
-    String name() default "";
+    String name();
     int length() default 0;
     String prefix() default "";
 }

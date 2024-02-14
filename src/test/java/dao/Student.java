@@ -9,7 +9,7 @@ import java.time.LocalDate;
 
 @Collection(name = "student")
 public class Student extends GenericDao {
-    @AutoSequence(prefix = "ETU", length = 8)
+    @AutoSequence(name = "student", prefix = "ETU", length = 8)
     @Field(name = "id", isPrimaryKey = true)
     private String id;
     @Field(name = "name")

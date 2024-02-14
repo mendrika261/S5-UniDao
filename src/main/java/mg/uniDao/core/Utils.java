@@ -1,5 +1,6 @@
 package mg.uniDao.core;
 
+import mg.uniDao.annotation.AutoSequence;
 import mg.uniDao.exception.DaoException;
 
 import java.lang.reflect.Field;
@@ -106,12 +107,36 @@ public class Utils {
         return prefix + "0".repeat(Math.max(0, length - value.length() - prefix.length())) + value;
     }
 
-    public static HashMap<String, String> getFieldsAnnotatedNameWithTypes(Object object) {
-        final HashMap<String, String> attributes = new HashMap<>();
-        for(final Field field: getDeclaredFields(object)) {
-            final String fieldName = getAnnotatedFieldName(field);
-            attributes.put(fieldName, field.getType().getName());
+    public static String getNextSequence(Service service, Field field) throws DaoException {
+        final AutoSequence autoSequence = field.getAnnotation(AutoSequence.class);
+        final String sequenceName = autoSequence.name() + Config.SEQUENCE_SUFFIX;
+        return Utils.fillSequence(autoSequence.prefix(), service.getDatabase().getNextSequenceValue(service, sequenceName),
+                autoSequence.length());
+    }
+
+    public static void fillAutoSequence(Service service, Object object) throws DaoException {
+        final Field[] fields = Utils.getDeclaredFields(object);
+        for(Field field: fields) {
+            if(field.isAnnotationPresent(AutoSequence.class)) {
+                final String nextSequence = getNextSequence(service, field);
+                try {
+                    Utils.setFieldValue(object, field, nextSequence);
+                } catch (IllegalArgumentException e) {
+                    throw new DaoException("Auto sequence field: '" + field.getName() + "' must be a String");
+                }
+            }
         }
-        return attributes;
+    }
+
+    public static HashMap<String, String> getPrimaryKeys(Object object) {
+        final HashMap<String, String> primaryKeys = new HashMap<>();
+        final Field[] fields = getDeclaredFields(object);
+        for(Field field: fields) {
+            if (field.isAnnotationPresent(mg.uniDao.annotation.Field.class)
+                    && field.getAnnotation(mg.uniDao.annotation.Field.class).isPrimaryKey()) {
+                primaryKeys.put(field.getName(), field.getAnnotation(mg.uniDao.annotation.Field.class).name());
+            }
+        }
+        return primaryKeys;
     }
 }

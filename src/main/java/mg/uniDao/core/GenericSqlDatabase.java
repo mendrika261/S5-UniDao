@@ -86,6 +86,7 @@ public abstract class GenericSqlDatabase implements Database {
 
     @Override
     public void create(Service service, String collectionName, Object object) throws DaoException {
+        Utils.fillAutoSequence(service, object);
         final HashMap<String, Object> attributes = Utils.getFieldsAnnotatedNameWithValues(object);
         final String sql = createSQL(collectionName, attributes);
         execute(service, sql, attributes);
@@ -201,18 +202,89 @@ public abstract class GenericSqlDatabase implements Database {
     }
 
 
-    protected abstract String createCollectionSQL(String collectionName, HashMap<String, String> attributes) throws DatabaseException;
+    protected abstract String createCollectionSQL(String collectionName);
 
-    public void createCollection(Service service, String collectionName, Object object) throws DaoException, DatabaseException {
-        final String sql = createCollectionSQL(collectionName, Utils.getFieldsAnnotatedNameWithTypes(object));
+    protected abstract String addColumnSQL(String collectionName, String columnName, String columnType) throws DatabaseException;
+
+    protected abstract String dropCollectionSQL(String collectionName);
+
+    public void dropCollection(Service service, String collectionName) throws DaoException {
+        final String sql = dropCollectionSQL(collectionName);
+        execute(service, sql);
+    }
+
+    protected abstract String dropPrimaryConstraintSQL(String collectionName);
+
+    public void dropPrimaryConstraint(Service service, String collectionName) throws DaoException {
+        final String sql = dropPrimaryConstraintSQL(collectionName);
         execute(service, sql);
     }
 
     protected abstract String addPrimaryKeySQL(String collectionName, List<String> primaryKeyColumns);
 
     public void addPrimaryKey(Service service, String collectionName, List<String> primaryKeyColumns) throws DaoException {
+        dropPrimaryConstraint(service, collectionName);
         final String sql = addPrimaryKeySQL(collectionName, primaryKeyColumns);
         execute(service, sql);
+    }
+
+    protected abstract String alterColumnSQL(String collectionName, String columnName, String columnType) throws DatabaseException;
+
+    public void alterColumn(Service service, String collectionName, String columnName, String columnType) throws DaoException, DatabaseException {
+        final String sql = alterColumnSQL(collectionName, columnName, columnType);
+        execute(service, sql);
+    }
+
+    protected abstract String setNullableSQL(String collectionName, String columnName, boolean nullable) throws DatabaseException;
+
+    public void setNullable(Service service, String collectionName, String columnName, boolean nullable) throws DaoException, DatabaseException {
+        final String sql = setNullableSQL(collectionName, columnName, nullable);
+        execute(service, sql);
+    }
+
+    protected abstract String createSequenceSQL(String sequenceName);
+
+    public void createSequence(Service service, String sequenceName) throws DaoException {
+        final String sql = createSequenceSQL(sequenceName);
+        execute(service, sql);
+    }
+
+    protected abstract String setUniqueSQL(String collectionName, String columnName, boolean unique) throws DatabaseException;
+
+    public void setUnique(Service service, String collectionName, String columnName, boolean unique) throws DaoException, DatabaseException {
+        final String sql = setUniqueSQL(collectionName, columnName, unique);
+        execute(service, sql);
+    }
+
+    public void createCollection(Service service, String collectionName, Object object) throws DaoException {
+        final String createSql = createCollectionSQL(collectionName);
+        final Field[] fields = Utils.getDeclaredFields(object);
+
+        try {
+            execute(service, createSql);
+            for(Field field: fields) {
+                final String addColumnSql = addColumnSQL(collectionName, Utils.getAnnotatedFieldName(field),
+                        field.getType().getName());
+                execute(service, addColumnSql);
+                alterColumn(service, collectionName, Utils.getAnnotatedFieldName(field), field.getType().getName());
+
+                if(field.isAnnotationPresent(mg.uniDao.annotation.Field.class)) {
+                    mg.uniDao.annotation.Field annotation = field.getAnnotation(mg.uniDao.annotation.Field.class);
+                    if(!annotation.isPrimaryKey()) {
+                        setNullable(service, collectionName, Utils.getAnnotatedFieldName(field), annotation.isNullable());
+                        setUnique(service, collectionName, Utils.getAnnotatedFieldName(field), annotation.isUnique());
+                    }
+                }
+
+                if(field.isAnnotationPresent(mg.uniDao.annotation.AutoSequence.class)) {
+                    mg.uniDao.annotation.AutoSequence annotation = field.getAnnotation(mg.uniDao.annotation.AutoSequence.class);
+                    createSequence(service, annotation.name() + Config.SEQUENCE_SUFFIX);
+                }
+            }
+            addPrimaryKey(service, collectionName, Utils.getPrimaryKeys(object).values().stream().toList());
+        } catch (Exception e) {
+            throw new DaoException(e.getMessage());
+        }
     }
 
 

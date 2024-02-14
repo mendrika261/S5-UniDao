@@ -41,11 +41,13 @@ public class PostgresSql extends GenericSqlDatabase {
 
     @Override
     protected String findSQL(String collectionName, HashMap<String, Object> conditions, String extraCondition) {
-        return "SELECT * FROM \"" + collectionName + "\" WHERE " + toConditionSQL(conditions) + " " + extraCondition + " LIMIT 1";
+        return "SELECT * FROM \"" + collectionName + "\" WHERE " + toConditionSQL(conditions) + " " + extraCondition
+                + " LIMIT 1";
     }
 
     @Override
-    protected String updateSQL(String collectionName, HashMap<String, Object> attributes, HashMap<String, Object> conditions, String extraCondition) {
+    protected String updateSQL(String collectionName, HashMap<String, Object> attributes, HashMap<String,
+            Object> conditions, String extraCondition) {
         StringBuilder setSQL = new StringBuilder();
         if(attributes != null) {
             for (String attribute : attributes.keySet())
@@ -87,22 +89,50 @@ public class PostgresSql extends GenericSqlDatabase {
 
 
     @Override
-    protected String createCollectionSQL(String collectionName, HashMap<String, String> attributes) throws DatabaseException {
-        final StringBuilder columnsSQL = new StringBuilder();
-        if (attributes != null) {
-            for (String attribute : attributes.keySet()) {
-                columnsSQL.append(attribute)
-                        .append(" ")
-                        .append(getMappingType(attributes.get(attribute)))
-                        .append(", ");
-            }
-            columnsSQL.delete(columnsSQL.length() - 2, columnsSQL.length());
-        }
-        return "CREATE TABLE IF NOT EXISTS \"" + collectionName + "\" (" + columnsSQL + ")";
+    protected String createCollectionSQL(String collectionName) {
+        return "CREATE TABLE IF NOT EXISTS \"" + collectionName + "\" ()";
+    }
+
+    @Override
+    protected String addColumnSQL(String collectionName, String columnName, String columnType) throws DatabaseException {
+        return "ALTER TABLE \"" + collectionName + "\" ADD COLUMN IF NOT EXISTS " + columnName + " "
+                + getMappingType(columnType);
+    }
+
+    @Override
+    protected String dropCollectionSQL(String collectionName) {
+        return "DROP TABLE IF EXISTS \"" + collectionName + "\"";
     }
 
     @Override
     protected String addPrimaryKeySQL(String collectionName, List<String> primaryKeyColumns) {
-        return "ALTER TABLE \"" + collectionName + "\" ADD PRIMARY KEY (" + String.join(", ", primaryKeyColumns) + ")";
+        return "ALTER TABLE \"" + collectionName + "\" ADD PRIMARY KEY (" + String.join(", ", primaryKeyColumns)+ ")";
+    }
+
+    @Override
+    protected  String dropPrimaryConstraintSQL(String collectionName) {
+        return "ALTER TABLE \"" + collectionName + "\" DROP CONSTRAINT IF EXISTS " + collectionName + "_pkey";
+    }
+
+    @Override
+    protected String alterColumnSQL(String collectionName, String columnName, String columnType) throws DatabaseException {
+        return "ALTER TABLE \"" + collectionName + "\" ALTER COLUMN " + columnName + " TYPE " + getMappingType(columnType)
+                + " USING " + columnName + "::" + getMappingType(columnType);
+    }
+
+    @Override
+    protected String setNullableSQL(String collectionName, String columnName, boolean nullable) throws DatabaseException {
+        return "ALTER TABLE \"" + collectionName + "\" ALTER COLUMN " + columnName + " " + (nullable ? "DROP" : "SET") + " NOT NULL";
+    }
+
+    @Override
+    protected String createSequenceSQL(String sequenceName) {
+        return "CREATE SEQUENCE IF NOT EXISTS " + sequenceName + " START 1 INCREMENT 1";
+    }
+
+    @Override
+    protected String setUniqueSQL(String collectionName, String columnName, boolean unique) {
+        return "ALTER TABLE \"" + collectionName + "\" ADD CONSTRAINT " + collectionName + "_" + columnName + "_unique "
+                + (unique ? "UNIQUE" : "DROP UNIQUE") + " (" + columnName + ")";
     }
 }

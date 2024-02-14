@@ -10,4 +10,6 @@ import java.lang.annotation.Target;
 public @interface Field {
     String name();
     boolean isPrimaryKey() default false;
+    boolean isNullable() default true;
+    boolean isUnique() default false;
 }
