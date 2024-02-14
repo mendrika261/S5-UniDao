@@ -4,6 +4,7 @@ import mg.uniDao.annotation.Collection;
 
 import mg.uniDao.exception.DaoException;
 import mg.uniDao.exception.DatabaseException;
+import mg.uniDao.util.ObjectUtils;
 
 import java.util.List;
 
@@ -43,7 +44,7 @@ public class GenericDao {
     @Override
     public String toString() {
         try {
-            return String.valueOf(Utils.getFieldsNamesWithValues(this));
+            return String.valueOf(ObjectUtils.getFieldsNamesWithValues(this));
         } catch (DaoException ignored) {}
         return null;
     }

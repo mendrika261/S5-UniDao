@@ -1,4 +1,4 @@
-package mg.uniDao.core;
+package mg.uniDao.util;
 
 import io.github.cdimascio.dotenv.Dotenv;
 

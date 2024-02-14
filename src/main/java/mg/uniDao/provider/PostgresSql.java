@@ -110,18 +110,18 @@ public class PostgresSql extends GenericSqlDatabase {
     }
 
     @Override
-    protected  String dropPrimaryConstraintSQL(String collectionName) {
+    protected  String dropPrimaryKeySQL(String collectionName) {
         return "ALTER TABLE \"" + collectionName + "\" DROP CONSTRAINT IF EXISTS " + collectionName + "_pkey";
     }
 
     @Override
-    protected String alterColumnSQL(String collectionName, String columnName, String columnType) throws DatabaseException {
+    protected String alterColumnTypeSQL(String collectionName, String columnName, String columnType) throws DatabaseException {
         return "ALTER TABLE \"" + collectionName + "\" ALTER COLUMN " + columnName + " TYPE " + getMappingType(columnType)
                 + " USING " + columnName + "::" + getMappingType(columnType);
     }
 
     @Override
-    protected String setNullableSQL(String collectionName, String columnName, boolean nullable) throws DatabaseException {
+    protected String setColumnNullableSQL(String collectionName, String columnName, boolean nullable) throws DatabaseException {
         return "ALTER TABLE \"" + collectionName + "\" ALTER COLUMN " + columnName + " " + (nullable ? "DROP" : "SET") + " NOT NULL";
     }
 
@@ -131,7 +131,7 @@ public class PostgresSql extends GenericSqlDatabase {
     }
 
     @Override
-    protected String setUniqueSQL(String collectionName, String columnName, boolean unique) {
+    protected String setColumnUniqueSQL(String collectionName, String columnName, boolean unique) {
         return "ALTER TABLE \"" + collectionName + "\" ADD CONSTRAINT " + collectionName + "_" + columnName + "_unique "
                 + (unique ? "UNIQUE" : "DROP UNIQUE") + " (" + columnName + ")";
     }

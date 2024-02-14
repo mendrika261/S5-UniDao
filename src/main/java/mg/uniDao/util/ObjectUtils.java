@@ -1,25 +1,22 @@
-package mg.uniDao.core;
+package mg.uniDao.util;
 
 import mg.uniDao.annotation.AutoSequence;
+import mg.uniDao.core.Service;
 import mg.uniDao.exception.DaoException;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.sql.PreparedStatement;
 import java.util.Arrays;
 import java.util.HashMap;
 
-public class Utils {
-    public static String upperFirst(String string) {
-        return string.substring(0,1).toUpperCase()+string.substring(1);
-    }
+public class ObjectUtils {
 
     private static Object getFieldValue(Object object, Field field) throws DaoException {
         Object fieldValue;
         String fieldName = field.getName();
         try {
-            final Method getter = object.getClass().getMethod("get" + Utils.upperFirst(fieldName));
+            final Method getter = object.getClass().getMethod("get" + Format.upperFirst(fieldName));
             fieldValue = getter.invoke(object);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {
             field.setAccessible(true);
@@ -35,7 +32,7 @@ public class Utils {
     public static void setFieldValue(Object object, Field field, Object value) throws DaoException {
         String fieldName = field.getName();
         try {
-            final Method setter = object.getClass().getMethod("set" + Utils.upperFirst(fieldName), value.getClass());
+            final Method setter = object.getClass().getMethod("set" + Format.upperFirst(fieldName), value.getClass());
             setter.invoke(object, value);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {
             field.setAccessible(true);
@@ -103,24 +100,20 @@ public class Utils {
         return getFieldsNotNullAnnotatedNameWithValues(object, false);
     }
 
-    public static String fillSequence(String prefix, String value, int length) {
-        return prefix + "0".repeat(Math.max(0, length - value.length() - prefix.length())) + value;
-    }
-
     public static String getNextSequence(Service service, Field field) throws DaoException {
         final AutoSequence autoSequence = field.getAnnotation(AutoSequence.class);
         final String sequenceName = autoSequence.name() + Config.SEQUENCE_SUFFIX;
-        return Utils.fillSequence(autoSequence.prefix(), service.getDatabase().getNextSequenceValue(service, sequenceName),
+        return Format.fillSequence(autoSequence.prefix(), service.getDatabase().getNextSequenceValue(service, sequenceName),
                 autoSequence.length());
     }
 
     public static void fillAutoSequence(Service service, Object object) throws DaoException {
-        final Field[] fields = Utils.getDeclaredFields(object);
+        final Field[] fields = ObjectUtils.getDeclaredFields(object);
         for(Field field: fields) {
             if(field.isAnnotationPresent(AutoSequence.class)) {
                 final String nextSequence = getNextSequence(service, field);
                 try {
-                    Utils.setFieldValue(object, field, nextSequence);
+                    ObjectUtils.setFieldValue(object, field, nextSequence);
                 } catch (IllegalArgumentException e) {
                     throw new DaoException("Auto sequence field: '" + field.getName() + "' must be a String");
                 }

@@ -18,5 +18,4 @@ public interface Database {
 
 
      void createCollection(Service service, String collectionName, Object object) throws DaoException, DatabaseException;
-     void addPrimaryKey(Service service, String collectionName, List<String> primaryKeyColumns) throws DaoException;
 }
