@@ -3,6 +3,7 @@ package mg.uniDao.core;
 import mg.uniDao.exception.DaoException;
 import mg.uniDao.exception.DatabaseException;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -10,10 +11,10 @@ import java.util.HashMap;
 import java.util.List;
 
 public interface GenericSqlDatabaseInterface extends Database {
-    void prepareStatement(PreparedStatement preparedStatement, HashMap<String, Object> attributes)
+    void prepareStatement(PreparedStatement preparedStatement, HashMap<Field, Object> attributes)
             throws IllegalAccessException, InvocationTargetException, SQLException;
 
-    void execute(Service service, String query, HashMap<String, Object> parameters) throws DaoException;
+    void execute(Service service, String query, HashMap<Field, Object> parameters) throws DaoException;
     void execute(Service service, String query) throws DaoException;
 
     String getNextSequenceValue(Service service, String sequenceName) throws DaoException;

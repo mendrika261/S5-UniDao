@@ -17,5 +17,5 @@ public interface Database {
      String getNextSequenceValue(Service service, String sequenceName) throws DaoException;
 
 
-     void createCollection(Service service, String collectionName, Object object) throws DaoException, DatabaseException;
+     void createCollection(Service service, String collectionName, Class<?> objectClass) throws DaoException, DatabaseException;
 }

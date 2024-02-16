@@ -38,7 +38,7 @@ public class GenericDao {
 
 
     public void createCollection(Service service) throws DaoException, DatabaseException {
-        service.getDatabase().createCollection(service, getCollectionName(), this);
+        service.getDatabase().createCollection(service, getCollectionName(), this.getClass());
     }
 
     @Override

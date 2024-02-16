@@ -6,6 +6,7 @@ import mg.uniDao.annotation.Field;
 import mg.uniDao.core.GenericDao;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Collection(name = "student", uniqueFields = {"name", "surname"})
 public class Student extends GenericDao {
@@ -16,8 +17,17 @@ public class Student extends GenericDao {
     private String name;
     private String surname;
     private LocalDate birthdate;
+    private LocalDateTime inscriptionDate;
     private double average;
     private Formation formation;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public String getName() {
         return name;
@@ -43,12 +53,12 @@ public class Student extends GenericDao {
         this.birthdate = birthdate;
     }
 
-    public String getId() {
-        return id;
+    public LocalDateTime getInscriptionDate() {
+        return inscriptionDate;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setInscriptionDate(LocalDateTime inscriptionDate) {
+        this.inscriptionDate = inscriptionDate;
     }
 
     public double getAverage() {
@@ -59,4 +69,11 @@ public class Student extends GenericDao {
         this.average = average;
     }
 
+    public Formation getFormation() {
+        return formation;
+    }
+
+    public void setFormation(Formation formation) {
+        this.formation = formation;
+    }
 }

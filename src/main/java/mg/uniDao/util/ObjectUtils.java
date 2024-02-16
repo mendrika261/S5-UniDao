@@ -7,6 +7,9 @@ import mg.uniDao.exception.DaoException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.Date;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -23,34 +26,48 @@ public class ObjectUtils {
             try {
                 fieldValue = field.get(object);
             } catch (IllegalAccessException ignored2) {
-                throw new DaoException("Cannot access field: " + fieldName + " in " + object.getClass().getName());
+                throw new DaoException("Can not access field: " + fieldName + " in " + object.getClass().getName());
             }
         }
         return fieldValue;
     }
 
+    private static Object getRealValue(Field field, Object value) {
+        try {
+            if(field.getType() == LocalDate.class)
+                return ((Date) value).toLocalDate();
+            if(field.getType() == LocalDateTime.class)
+                return ((java.sql.Timestamp) value).toLocalDateTime();
+            return field.getType().cast(value);
+        } catch (ClassCastException e) {
+            final String json = Format.toJson(value);
+            return Format.fromJson(json, field.getType());
+        }
+    }
+
     public static void setFieldValue(Object object, Field field, Object value) throws DaoException {
         String fieldName = field.getName();
+        Object castedValue = getRealValue(field, value);
         try {
-            final Method setter = object.getClass().getMethod("set" + Format.upperFirst(fieldName), value.getClass());
-            setter.invoke(object, value);
+            final Method setter = object.getClass().getMethod("set" + Format.upperFirst(fieldName), castedValue.getClass());
+            setter.invoke(object, castedValue);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {
             field.setAccessible(true);
             try {
-                field.set(object, value);
+                field.set(object, castedValue);
             } catch (IllegalAccessException e) {
-                throw new DaoException("Cannot access field: " + fieldName + " in " + object.getClass().getName());
+                throw new DaoException("Can not access field: " + fieldName + " in " + object.getClass().getName());
             }
         }
     }
 
-    public static Field[] getDeclaredFields(Object object) {
+    public static Field[] getDeclaredFields(Class<?> objectClass) {
         final Field[] superFields;
         /*if (object.getClass().isAnnotationPresent(AutoSequence.class))
             superFields = object.getClass().getSuperclass().getDeclaredFields();
         else*/
         superFields = new Field[0];
-        final Field[] fields = object.getClass().getDeclaredFields();
+        final Field[] fields = objectClass.getDeclaredFields();
         final Field[] allFields = Arrays.copyOf(superFields, superFields.length + fields.length);
         System.arraycopy(fields, 0, allFields, superFields.length, fields.length);
         return allFields;
@@ -58,7 +75,7 @@ public class ObjectUtils {
 
     public static HashMap<String, Object> getFieldsNamesWithValues(Object object) throws DaoException {
         final HashMap<String, Object> attributes = new HashMap<>();
-        for(final Field field: getDeclaredFields(object)) {
+        for(final Field field: getDeclaredFields(object.getClass())) {
             final String fieldName = field.getName();
             attributes.put(fieldName, getFieldValue(object, field));
         }
@@ -71,32 +88,32 @@ public class ObjectUtils {
         return field.getName();
     }
 
-    public static HashMap<String, Object> getFieldsAnnotatedNameWithValues(Object object) throws DaoException {
-        final HashMap<String, Object> attributes = new HashMap<>();
-        for(final Field field: getDeclaredFields(object)) {
-            final String fieldName = getAnnotatedFieldName(field);
-            attributes.put(fieldName, getFieldValue(object, field));
+    public static HashMap<Field, Object> getFieldsAnnotatedNameWithValues(Object object) throws DaoException {
+        final HashMap<Field, Object> attributes = new HashMap<>();
+        for(final Field field: getDeclaredFields(object.getClass())) {
+            //final String fieldName = getAnnotatedFieldName(field);
+            attributes.put(field, getFieldValue(object, field));
         }
         return attributes;
     }
 
-    public static HashMap<String, Object> getFieldsNotNullAnnotatedNameWithValues(Object object, boolean throwPrimitiveType)
+    public static HashMap<Field, Object> getFieldsNotNullAnnotatedNameWithValues(Object object, boolean throwPrimitiveType)
             throws DaoException {
-        final HashMap<String, Object> attributes = new HashMap<>();
-        final Field[] fields = getDeclaredFields(object);
+        final HashMap<Field, Object> attributes = new HashMap<>();
+        final Field[] fields = getDeclaredFields(object.getClass());
         for(final Field field: fields) {
             if(throwPrimitiveType && field.getType().isPrimitive())
                 throw new DaoException("Object condition work only with object without primitive field: \n" +
                         Arrays.toString(Arrays.stream(fields).toArray()));
-            final String fieldName = getAnnotatedFieldName(field);
+            //final String fieldName = getAnnotatedFieldName(field);
             final Object fieldValue = getFieldValue(object, field);
             if (fieldValue != null)
-                attributes.put(fieldName, fieldValue);
+                attributes.put(field, fieldValue);
         }
         return attributes;
     }
 
-    public static HashMap<String, Object> getFieldsNotNullAnnotatedNameWithValues(Object object) throws DaoException {
+    public static HashMap<Field, Object> getFieldsNotNullAnnotatedNameWithValues(Object object) throws DaoException {
         return getFieldsNotNullAnnotatedNameWithValues(object, false);
     }
 
@@ -108,7 +125,7 @@ public class ObjectUtils {
     }
 
     public static void fillAutoSequence(Service service, Object object) throws DaoException {
-        final Field[] fields = ObjectUtils.getDeclaredFields(object);
+        final Field[] fields = ObjectUtils.getDeclaredFields(object.getClass());
         for(Field field: fields) {
             if(field.isAnnotationPresent(AutoSequence.class)) {
                 final String nextSequence = getNextSequence(service, field);
@@ -121,9 +138,9 @@ public class ObjectUtils {
         }
     }
 
-    public static HashMap<String, String> getPrimaryKeys(Object object) {
+    public static HashMap<String, String> getPrimaryKeys(Class<?> objectClass) {
         final HashMap<String, String> primaryKeys = new HashMap<>();
-        final Field[] fields = getDeclaredFields(object);
+        final Field[] fields = getDeclaredFields(objectClass);
         for(Field field: fields) {
             if (field.isAnnotationPresent(mg.uniDao.annotation.Field.class)
                     && field.getAnnotation(mg.uniDao.annotation.Field.class).isPrimaryKey()) {

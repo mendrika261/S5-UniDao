@@ -1,10 +1,12 @@
 package mg.uniDao.core;
 
+import mg.uniDao.annotation.AutoSequence;
 import mg.uniDao.annotation.Collection;
 import mg.uniDao.exception.DaoException;
 import mg.uniDao.exception.DatabaseException;
 import mg.uniDao.log.GeneralLog;
 import mg.uniDao.util.Config;
+import mg.uniDao.util.Format;
 import mg.uniDao.util.ObjectUtils;
 
 import java.lang.reflect.InvocationTargetException;
@@ -56,20 +58,24 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         return connect(true);
     }
 
+    protected abstract String getMappingType(String type);
+
     @Override
-    public void prepareStatement(PreparedStatement preparedStatement, HashMap<String, Object> attributes)
+    public void prepareStatement(PreparedStatement preparedStatement, HashMap<Field, Object> attributes)
             throws IllegalAccessException, InvocationTargetException, SQLException {
         int i = 1;
-        for (String key : attributes.keySet()) {
-            //if (attributes.get(key) == null) {
-            //    preparedStatement.setNull(i, Types.NULL);
-            preparedStatement.setObject(i, attributes.get(key));
+        for (Field key : attributes.keySet()) {
+            try {
+                preparedStatement.setObject(i, attributes.get(key));
+            } catch (Exception e) {
+                preparedStatement.setString(i, Format.toJson(attributes.get(key)));
+            }
             i++;
         }
     }
 
     @Override
-    public void execute(Service service, String query, HashMap<String, Object> parameters) throws DaoException {
+    public void execute(Service service, String query, HashMap<Field, Object> parameters) throws DaoException {
         GeneralLog.printQuery(query);
         final Connection connection = (Connection) service.getAccess();
         try {
@@ -78,7 +84,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
 
             preparedStatement.executeUpdate();
             preparedStatement.close();
-            if(!service.isTransactional())
+            if (!service.isTransactional())
                 service.endConnection();
         } catch (SQLException | IllegalAccessException | InvocationTargetException e) {
             service.endConnection();
@@ -91,12 +97,12 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         execute(service, query, new HashMap<>());
     }
 
-    protected abstract String createSQL(String collectionName, HashMap<String, Object> attributes);
+    protected abstract String createSQL(String collectionName, HashMap<Field, Object> attributes);
 
     @Override
     public void create(Service service, String collectionName, Object object) throws DaoException {
         ObjectUtils.fillAutoSequence(service, object);
-        final HashMap<String, Object> attributes = ObjectUtils.getFieldsAnnotatedNameWithValues(object);
+        final HashMap<Field, Object> attributes = ObjectUtils.getFieldsAnnotatedNameWithValues(object);
         final String sql = createSQL(collectionName, attributes);
         execute(service, sql, attributes);
     }
@@ -105,8 +111,9 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
             IllegalAccessException, InvocationTargetException, InstantiationException, DaoException {
         final Field[] fields = ObjectUtils.getDeclaredFields(className);
         final T object = className.getDeclaredConstructor().newInstance();
-        for (Field field : fields)
+        for (Field field : fields) {
             ObjectUtils.setFieldValue(object, field, resultSet.getObject(ObjectUtils.getAnnotatedFieldName(field)));
+        }
         return object;
     }
 
@@ -142,13 +149,13 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         }
     }
 
-    protected abstract String findSQL(String collectionName, HashMap<String, Object> conditions, String extraCondition);
+    protected abstract String findSQL(String collectionName, HashMap<Field, Object> conditions, String extraCondition);
 
     @Override
     public <T> T find(Service service, String collectionName, Object condition, String extraCondition)
             throws DaoException {
         final Connection connection = (Connection) service.getAccess();
-        final HashMap<String, Object> conditions = ObjectUtils.getFieldsNotNullAnnotatedNameWithValues(condition);
+        final HashMap<Field, Object> conditions = ObjectUtils.getFieldsNotNullAnnotatedNameWithValues(condition);
         final String sql = findSQL(collectionName, conditions, extraCondition);
         GeneralLog.printQuery(sql);
 
@@ -172,25 +179,25 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         }
     }
 
-    protected abstract String updateSQL(String collectionName, HashMap<String, Object> attributes,
-                                        HashMap<String, Object> conditions, String extraCondition);
+    protected abstract String updateSQL(String collectionName, HashMap<Field, Object> attributes,
+                                        HashMap<Field, Object> conditions, String extraCondition);
 
     @Override
     public void update(Service service, String collectionName, Object condition, Object object, String extraCondition)
             throws DaoException {
-        final HashMap<String, Object> values = ObjectUtils.getFieldsNotNullAnnotatedNameWithValues(object, true);
-        final HashMap<String, Object> conditions = ObjectUtils.getFieldsNotNullAnnotatedNameWithValues(condition);
+        final HashMap<Field, Object> values = ObjectUtils.getFieldsNotNullAnnotatedNameWithValues(object, true);
+        final HashMap<Field, Object> conditions = ObjectUtils.getFieldsNotNullAnnotatedNameWithValues(condition);
         final String sql = updateSQL(collectionName, values, conditions, extraCondition);
         values.putAll(conditions);
         execute(service, sql, values);
     }
 
-    protected abstract String deleteSQL(String collectionName, HashMap<String, Object> conditions, String extraCondition);
+    protected abstract String deleteSQL(String collectionName, HashMap<Field, Object> conditions, String extraCondition);
 
     @Override
     public void delete(Service service, String collectionName, Object condition, String extraCondition)
             throws DaoException {
-        final HashMap<String, Object> conditions = ObjectUtils.getFieldsNotNullAnnotatedNameWithValues(condition, true);
+        final HashMap<Field, Object> conditions = ObjectUtils.getFieldsNotNullAnnotatedNameWithValues(condition, true);
         final String sql = deleteSQL(collectionName, conditions, extraCondition);
         execute(service, sql, conditions);
     }
@@ -308,16 +315,18 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
             throws DatabaseException;
 
     @Override
-    public void createCollection(Service service, String collectionName, Object object) throws DaoException, DatabaseException {
+    public void createCollection(Service service, String collectionName, Class<?> objectClass) throws DaoException, DatabaseException {
         final String createSql = createCollectionSQL(collectionName);
-        final Field[] fields = ObjectUtils.getDeclaredFields(object);
+        final Field[] fields = ObjectUtils.getDeclaredFields(objectClass);
 
         try {
             execute(service, createSql);
+
             for(Field field: fields) {
                 final String addColumnSql = addColumnSQL(collectionName, ObjectUtils.getAnnotatedFieldName(field),
                         field.getType().getName());
                 execute(service, addColumnSql);
+
                 alterColumnType(service, collectionName, ObjectUtils.getAnnotatedFieldName(field),
                         field.getType().getName());
 
@@ -326,22 +335,22 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
                     if(!annotation.isPrimaryKey()) {
                         setColumnNullable(service, collectionName, ObjectUtils.getAnnotatedFieldName(field),
                                 annotation.isNullable());
+
                         setColumnUnique(service, collectionName, ObjectUtils.getAnnotatedFieldName(field),
                                 annotation.isUnique());
                     }
                 }
 
-                if(field.isAnnotationPresent(mg.uniDao.annotation.AutoSequence.class)) {
-                    mg.uniDao.annotation.AutoSequence annotation = field
-                            .getAnnotation(mg.uniDao.annotation.AutoSequence.class);
+                if(field.isAnnotationPresent(AutoSequence.class)) {
+                    AutoSequence annotation = field.getAnnotation(AutoSequence.class);
                     createSequence(service, annotation.name() + Config.SEQUENCE_SUFFIX);
                 }
             }
 
-            addPrimaryKey(service, collectionName, ObjectUtils.getPrimaryKeys(object).values().stream().toList());
+            addPrimaryKey(service, collectionName, ObjectUtils.getPrimaryKeys(objectClass).values().stream().toList());
 
-            if(object.getClass().isAnnotationPresent(Collection.class)) {
-                Collection annotation = object.getClass().getAnnotation(Collection.class);
+            if(objectClass.isAnnotationPresent(Collection.class)) {
+                Collection annotation = objectClass.getAnnotation(Collection.class);
                 setUnique(service, collectionName, annotation.uniqueFields());
             }
         } catch (DaoException | DatabaseException e) {

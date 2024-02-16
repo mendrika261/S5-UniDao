@@ -1,12 +1,15 @@
+import dao.Formation;
 import mg.uniDao.core.Database;
 import mg.uniDao.core.Service;
 import mg.uniDao.exception.DaoException;
 import mg.uniDao.exception.DatabaseException;
 import mg.uniDao.provider.PostgresSql;
 import dao.Student;
+import mg.uniDao.util.Format;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -37,8 +40,14 @@ public class DatabaseTest {
         Service service = postgresSql.connect();
         Student student = new Student();
         student.setBirthdate(LocalDate.now());
+        student.setInscriptionDate(LocalDateTime.now());
         student.setName("Name");
         student.setSurname("Surname");
+
+        Formation formation = new Formation();
+        formation.setName("Formation");
+        student.setFormation(formation);
+
         student.save(service);
         service.endConnection();
     }
