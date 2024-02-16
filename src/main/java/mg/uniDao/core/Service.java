@@ -21,14 +21,14 @@ public class Service {
         new Service(database, access, true);
     }
 
-    public void commit() throws DaoException {
+    public void commit() {
         try {
             getAccess().getClass().getMethod("commit").invoke(getAccess());
-        } catch (Exception ignored) {
+        } catch (Exception e) {
             try {
                 getAccess().getClass().getMethod("rollback").invoke(getAccess());
             } catch (Exception ignored2) {}
-            throw new DaoException("Cannot commit changes");
+            throw new RuntimeException("Cannot commit changes! " + e.getMessage());
         }
     }
 

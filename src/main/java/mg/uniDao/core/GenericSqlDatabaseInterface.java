@@ -27,4 +27,6 @@ public interface GenericSqlDatabaseInterface extends Database {
     void createSequence(Service service, String sequenceName) throws DaoException;
     void setColumnUnique(Service service, String collectionName, String columnName, boolean unique)
             throws DaoException, DatabaseException;
+    void setUnique(Service service, String collectionName, String[] columnName)
+            throws DaoException, DatabaseException;
 }

@@ -1,7 +1,6 @@
 package mg.uniDao.provider;
 
 import mg.uniDao.core.GenericSqlDatabase;
-import mg.uniDao.exception.DatabaseException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -67,7 +66,7 @@ public class PostgresSql extends GenericSqlDatabase {
         return "SELECT nextval('" + sequenceName + "') AS result";
     }
 
-    public String getMappingType(String type) throws DatabaseException {
+    public String getMappingType(String type) {
         return switch (type) {
             case "java.lang.Integer", "int" -> "INT";
             case "java.lang.Double", "double" -> "DOUBLE PRECISION";
@@ -78,12 +77,11 @@ public class PostgresSql extends GenericSqlDatabase {
             case "java.math.BigInteger", "java.lang.Long" -> "BIGINT";
             case "java.math.BigDecimal" -> "DECIMAL";
             case "java.util.UUID" -> "UUID";
-            case "java.lang.Object" -> "JSONB";
             case "java.time.LocalTime" -> "TIME";
             case "java.lang.Float" -> "FLOAT";
             case "java.lang.Short", "java.lang.Byte" -> "SMALLINT";
             case "java.lang.Character" -> "CHAR";
-            default -> throw new DatabaseException("Type not supported: " + type);
+            default -> "JSONB";
         };
     }
 
@@ -94,7 +92,7 @@ public class PostgresSql extends GenericSqlDatabase {
     }
 
     @Override
-    protected String addColumnSQL(String collectionName, String columnName, String columnType) throws DatabaseException {
+    protected String addColumnSQL(String collectionName, String columnName, String columnType) {
         return "ALTER TABLE \"" + collectionName + "\" ADD COLUMN IF NOT EXISTS " + columnName + " "
                 + getMappingType(columnType);
     }
@@ -115,13 +113,13 @@ public class PostgresSql extends GenericSqlDatabase {
     }
 
     @Override
-    protected String alterColumnTypeSQL(String collectionName, String columnName, String columnType) throws DatabaseException {
+    protected String alterColumnTypeSQL(String collectionName, String columnName, String columnType) {
         return "ALTER TABLE \"" + collectionName + "\" ALTER COLUMN " + columnName + " TYPE " + getMappingType(columnType)
                 + " USING " + columnName + "::" + getMappingType(columnType);
     }
 
     @Override
-    protected String setColumnNullableSQL(String collectionName, String columnName, boolean nullable) throws DatabaseException {
+    protected String setColumnNullableSQL(String collectionName, String columnName, boolean nullable) {
         return "ALTER TABLE \"" + collectionName + "\" ALTER COLUMN " + columnName + " " + (nullable ? "DROP" : "SET") + " NOT NULL";
     }
 
@@ -131,8 +129,23 @@ public class PostgresSql extends GenericSqlDatabase {
     }
 
     @Override
-    protected String setColumnUniqueSQL(String collectionName, String columnName, boolean unique) {
-        return "ALTER TABLE \"" + collectionName + "\" ADD CONSTRAINT " + collectionName + "_" + columnName + "_unique "
-                + (unique ? "UNIQUE" : "DROP UNIQUE") + " (" + columnName + ")";
+    protected String addColumnUniqueSQL(String collectionName, String columnName) {
+        return "ALTER TABLE \"" + collectionName + "\" ADD UNIQUE (" + columnName + ")";
+    }
+
+    @Override
+    protected String dropColumnUniqueSQL(String collectionName, String columnName) {
+        return "ALTER TABLE \"" + collectionName + "\" DROP CONSTRAINT IF EXISTS " + collectionName + "_" + columnName + "_key";
+    }
+
+    @Override
+    protected String addUniqueSQL(String collectionName, String[] columnName) {
+        return "ALTER TABLE \"" + collectionName + "\" ADD CONSTRAINT " + collectionName +
+                "_unique UNIQUE (" + String.join(", ", columnName) + ")";
+    }
+
+    @Override
+    protected String dropUniqueSQL(String collectionName) {
+        return "ALTER TABLE \"" + collectionName + "\" DROP CONSTRAINT IF EXISTS " + collectionName + "_unique";
     }
 }

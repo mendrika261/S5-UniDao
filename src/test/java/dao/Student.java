@@ -7,7 +7,7 @@ import mg.uniDao.core.GenericDao;
 
 import java.time.LocalDate;
 
-@Collection(name = "student")
+@Collection(name = "student", uniqueFields = {"name", "surname"})
 public class Student extends GenericDao {
     @AutoSequence(name = "student", prefix = "ETU", length = 8)
     @Field(name = "id", isPrimaryKey = true)
@@ -17,6 +17,7 @@ public class Student extends GenericDao {
     private String surname;
     private LocalDate birthdate;
     private double average;
+    private Formation formation;
 
     public String getName() {
         return name;
@@ -57,4 +58,5 @@ public class Student extends GenericDao {
     public void setAverage(double average) {
         this.average = average;
     }
+
 }

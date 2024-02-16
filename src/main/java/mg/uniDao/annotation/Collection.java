@@ -9,4 +9,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface Collection {
     String name();
+    String[] uniqueFields() default {};
 }
