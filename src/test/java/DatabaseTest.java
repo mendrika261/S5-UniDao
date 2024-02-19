@@ -1,4 +1,5 @@
 import dao.Formation;
+import dao.Mark;
 import mg.uniDao.core.Database;
 import mg.uniDao.core.Service;
 import mg.uniDao.exception.DaoException;
@@ -31,6 +32,8 @@ public class DatabaseTest {
         Service service = postgresSql.connect();
         Student student = new Student();
         student.createCollection(service);
+        Mark mark = new Mark();
+        mark.createCollection(service);
         service.endConnection();
     }
 
