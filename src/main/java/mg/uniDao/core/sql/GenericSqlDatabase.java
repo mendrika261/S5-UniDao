@@ -1,7 +1,9 @@
-package mg.uniDao.core;
+package mg.uniDao.core.sql;
 
 import mg.uniDao.annotation.AutoSequence;
 import mg.uniDao.annotation.Collection;
+import mg.uniDao.annotation.Reference;
+import mg.uniDao.core.Service;
 import mg.uniDao.exception.DaoException;
 import mg.uniDao.exception.DatabaseException;
 import mg.uniDao.log.GeneralLog;
@@ -13,6 +15,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -22,6 +25,8 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     private String url = Config.DOTENV.get("DB_URL");
     private String username = Config.DOTENV.get("DB_USERNAME");
     private String password = Config.DOTENV.get("DB_PASSWORD");
+
+    private static final String COL_NAME_SEPARATOR = ".";
 
     public GenericSqlDatabase() {
     }
@@ -76,12 +81,12 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
 
     @Override
     public void execute(Service service, String query, HashMap<Field, Object> parameters) throws DaoException {
-        GeneralLog.printQuery(query);
         final Connection connection = (Connection) service.getAccess();
         try {
             final PreparedStatement preparedStatement = connection.prepareStatement(query);
             prepareStatement(preparedStatement, parameters);
 
+            GeneralLog.printQuery(preparedStatement.toString());
             preparedStatement.executeUpdate();
             preparedStatement.close();
             if (!service.isTransactional())
@@ -107,34 +112,90 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         execute(service, sql, attributes);
     }
 
-    private <T> T resultSetToObject(ResultSet resultSet, Class<T> className) throws SQLException, NoSuchMethodException,
+    private <T> T resultSetToObject(ResultSet resultSet, Class<T> className, String reference, String... join)
+            throws SQLException, NoSuchMethodException,
             IllegalAccessException, InvocationTargetException, InstantiationException, DaoException {
         final Field[] fields = ObjectUtils.getDeclaredFields(className);
         final T object = className.getDeclaredConstructor().newInstance();
+        reference = reference.isEmpty() ? "": (reference + COL_NAME_SEPARATOR);
         for (Field field : fields) {
-            ObjectUtils.setFieldValue(object, field, resultSet.getObject(ObjectUtils.getAnnotatedFieldName(field)));
+            if(!field.isAnnotationPresent(Reference.class)) {
+                ObjectUtils.setFieldValue(
+                        object,
+                        field,
+                        resultSet.getObject(reference+ObjectUtils.getAnnotatedFieldName(field))
+                );
+            } else {
+                String finalReference = reference;
+                if(join != null && join.length > 0 &&
+                        Arrays.stream(join).anyMatch(joiner ->
+                                joiner.equalsIgnoreCase(finalReference + field.getName()))) {
+                    final Reference referenceAnnotation = field.getAnnotation(Reference.class);
+                    final Class<?> referenceClass = referenceAnnotation.collection();
+                    final String referencePrefix = reference +
+                                                    referenceClass.getAnnotation(Collection.class).name();
+                    final Object referenceObject = resultSetToObject(resultSet, referenceClass, referencePrefix);
+                    ObjectUtils.setFieldValue(object, field, referenceObject);
+                } else { // set only the reference id
+                    final String columnName = ObjectUtils.getAnnotatedFieldName(field);
+                    final Object referencedObject = field.getType().getDeclaredConstructor().newInstance();
+                    final String primaryKey = ObjectUtils.getPrimaryKeys(field.getType()).values().stream().toList().get(0);
+                    ObjectUtils.setFieldValue(
+                            referencedObject,
+                            ObjectUtils.getDeclaredField(field.getType(), primaryKey),
+                            resultSet.getObject(reference+columnName)
+                    );
+                    ObjectUtils.setFieldValue(
+                            object,
+                            field,
+                            referencedObject
+                    );
+                }
+            }
         }
         return object;
     }
 
-    protected abstract String findListWithLimitSQL(String collectionName, String extraCondition);
+    protected abstract String findListWithLimitSQL(String collectionName, String extraCondition,
+                                                   List<Joiner> joiners);
+
+    private List<Joiner> extractJoinersFrom(Class<?> className, String... joins) throws DaoException {
+        List<Joiner> joiners = new ArrayList<>();
+        for (String join: joins) {
+            final String[] joinParts = join.split("\\"+COL_NAME_SEPARATOR);
+            final String insideJoinField = joinParts[joinParts.length - 1];
+            final Field field = ObjectUtils.getDeclaredField(className, insideJoinField);
+            final Reference reference = field.getAnnotation(Reference.class);
+            final String outsideJoinCollection = reference.collection().getAnnotation(Collection.class).name();
+            final String outsideJoinFieldOrCondition = reference.field();
+            final List<String> columns = ObjectUtils.getColumnNamesWithChildren(reference.collection(), "");
+
+            final Joiner joiner = new Joiner(ObjectUtils.getAnnotatedFieldName(field),
+                    outsideJoinCollection,
+                    outsideJoinFieldOrCondition,
+                    columns);
+            joiners.add(joiner);
+        }
+        return joiners;
+    }
 
     @Override
     public <T> List<T> findList(Service service, String collectionName, Class<T> className, int page, int limit,
-                                String extraCondition) throws DaoException {
+                                String extraCondition, String... joins) throws DaoException {
         final Connection connection = (Connection) service.getAccess();
-        final String sql = findListWithLimitSQL(collectionName, extraCondition);
-        GeneralLog.printQuery(sql);
+        final String sql = findListWithLimitSQL(collectionName, extraCondition, extractJoinersFrom(className, joins));
         final List<T> objects = new ArrayList<T>();
 
         try {
             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setInt(1, limit);
             preparedStatement.setInt(2, (page - 1) * limit);
+
+            GeneralLog.printQuery(preparedStatement.toString());
             final ResultSet resultSet = preparedStatement.executeQuery();
 
             while (resultSet.next()) {
-                final T object = resultSetToObject(resultSet, className);
+                final T object = resultSetToObject(resultSet, className, "", joins);
                 objects.add(object);
             }
 
@@ -149,24 +210,27 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         }
     }
 
-    protected abstract String findSQL(String collectionName, HashMap<Field, Object> conditions, String extraCondition);
+    protected abstract String findSQL(String collectionName, HashMap<Field, Object> conditions,
+                                      String extraCondition, List<Joiner> joiners);
 
     @Override
-    public <T> T find(Service service, String collectionName, Object condition, String extraCondition)
+    public <T> T find(Service service, String collectionName, Object condition, String extraCondition, String... joins)
             throws DaoException {
         final Connection connection = (Connection) service.getAccess();
         final HashMap<Field, Object> conditions = ObjectUtils.getFieldsNotNullAnnotatedNameWithValues(condition);
-        final String sql = findSQL(collectionName, conditions, extraCondition);
-        GeneralLog.printQuery(sql);
+        final String sql = findSQL(collectionName, conditions, extraCondition,
+                                        extractJoinersFrom(condition.getClass(), joins));
 
         try {
             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
             prepareStatement(preparedStatement, conditions);
+
+            GeneralLog.printQuery(preparedStatement.toString());
             final ResultSet resultSet = preparedStatement.executeQuery();
 
             T object = null;
             if(resultSet.next())
-                object = resultSetToObject(resultSet, (Class<T>) condition.getClass());
+                object = resultSetToObject(resultSet, (Class<T>) condition.getClass(), "", joins);
 
             resultSet.close();
             preparedStatement.close();
@@ -207,10 +271,11 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     @Override
     public String getNextSequenceValue(Service service, String sequenceName) throws DaoException {
         String sql = getNextSequenceValueSql(sequenceName);
-        GeneralLog.printQuery(sql);
 
         try {
             final PreparedStatement preparedStatement = ((Connection) service.getAccess()).prepareStatement(sql);
+
+            GeneralLog.printQuery(preparedStatement.toString());
             final ResultSet resultSet = preparedStatement.executeQuery();
 
             resultSet.next();
@@ -284,10 +349,15 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     protected abstract String dropColumnUniqueSQL(String collectionName, String columnName);
 
     @Override
+    public void dropColumnUnique(Service service, String collectionName, String columnName) throws DaoException {
+        final String sql = dropColumnUniqueSQL(collectionName, columnName);
+        execute(service, sql);
+    }
+
+    @Override
     public void setColumnUnique(Service service, String collectionName, String columnName, boolean unique)
             throws DaoException, DatabaseException {
-        final String dropSQL = dropColumnUniqueSQL(collectionName, columnName);
-        execute(service, dropSQL);
+        dropColumnUnique(service, collectionName, columnName);
         if(unique) {
             final String addSQL = addColumnUniqueSQL(collectionName, columnName);
             execute(service, addSQL);
@@ -313,6 +383,25 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
 
     protected abstract String addColumnSQL(String collectionName, String columnName, String columnType)
             throws DatabaseException;
+
+    protected abstract String addForeignKeySQL(String collectionName, String columnName, String referenceCollection,
+                                              String referenceColumn) throws DatabaseException;
+
+    protected abstract String dropForeignKeySQL(String collectionName, String columnName);
+
+    @Override
+    public void dropForeignKey(Service service, String collectionName, String columnName) throws DaoException {
+        final String sql = dropForeignKeySQL(collectionName, columnName);
+        execute(service, sql);
+    }
+
+    @Override
+    public void addForeignKey(Service service, String collectionName, String columnName, String referenceCollection,
+                             String referenceColumn) throws DaoException, DatabaseException {
+        dropForeignKey(service, collectionName, columnName);
+        final String sql = addForeignKeySQL(collectionName, columnName, referenceCollection, referenceColumn);
+        execute(service, sql);
+    }
 
     @Override
     public void createCollection(Service service, String collectionName, Class<?> objectClass) throws DaoException, DatabaseException {
@@ -344,6 +433,13 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
                 if(field.isAnnotationPresent(AutoSequence.class)) {
                     AutoSequence annotation = field.getAnnotation(AutoSequence.class);
                     createSequence(service, annotation.name() + Config.SEQUENCE_SUFFIX);
+                }
+
+                if(field.isAnnotationPresent(Reference.class)) {
+                    Reference annotation = field.getAnnotation(Reference.class);
+                    addForeignKey(service, collectionName, ObjectUtils.getAnnotatedFieldName(field),
+                            annotation.collection().getAnnotation(Collection.class).name(),
+                            annotation.field());
                 }
             }
 

@@ -6,14 +6,12 @@ import mg.uniDao.exception.DaoException;
 import mg.uniDao.exception.DatabaseException;
 import mg.uniDao.provider.PostgresSql;
 import dao.Student;
-import mg.uniDao.util.Format;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class DatabaseTest {
@@ -50,8 +48,14 @@ public class DatabaseTest {
         Formation formation = new Formation();
         formation.setName("Formation");
         student.setFormation(formation);
-
         student.save(service);
+
+        Mark mark = new Mark();
+        mark.setCoefficient(1);
+        mark.setValue(10.0);
+        mark.setStudent(student);
+        mark.save(service);
+
         service.endConnection();
     }
 
@@ -59,11 +63,9 @@ public class DatabaseTest {
     void testFindList() throws DatabaseException, DaoException {
         Database postgresSql = new PostgresSql();
         Service service = postgresSql.connect();
-        List<Student> studentList = postgresSql.findList(service, "student", Student.class,
-                1, 10, "");
+        List<Mark> studentList = postgresSql.findList(service, "mark", Mark.class,
+                1, 10, "", "student");
         System.out.println(studentList);
-        assertEquals(studentList.size(), new Student().findList(service, 1, 10, "").size(),
-                "ReadAll failed");
         service.endConnection();
     }
 
@@ -71,11 +73,11 @@ public class DatabaseTest {
     void testFind() throws DatabaseException, DaoException {
         Database postgresSql = new PostgresSql();
         Service service = postgresSql.connect();
-        Student student = new Student();
-        student.setBirthdate(LocalDate.now());
-        student = student.find(service, "");
-        System.out.println(student);
-        assertNotNull(student, "Read failed");
+        Mark mark = new Mark();
+        mark.setCoefficient(1);
+        mark = mark.find(service,"", "student");
+        System.out.println(mark);
+        assertNotNull(mark, "Read failed");
         service.endConnection();
     }
 

@@ -3,13 +3,13 @@ package dao;
 import mg.uniDao.annotation.AutoSequence;
 import mg.uniDao.annotation.Collection;
 import mg.uniDao.annotation.Field;
-import mg.uniDao.core.GenericDao;
+import mg.uniDao.core.sql.GenericSqlDao;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Collection(name = "student", uniqueFields = {"name", "surname"})
-public class Student extends GenericDao {
+public class Student extends GenericSqlDao {
     @AutoSequence(name = "student", prefix = "ETU", length = 8)
     @Field(name = "id", isPrimaryKey = true)
     private String id;

@@ -4,15 +4,15 @@ import mg.uniDao.annotation.AutoSequence;
 import mg.uniDao.annotation.Collection;
 import mg.uniDao.annotation.Field;
 import mg.uniDao.annotation.Reference;
-import mg.uniDao.core.GenericDao;
+import mg.uniDao.core.sql.GenericSqlDao;
 
 @Collection(name = "mark")
-public class Mark extends GenericDao {
+public class Mark extends GenericSqlDao {
     @Field(name = "id", isPrimaryKey = true)
     @AutoSequence(name = "mark")
     String id;
     @Field(name = "student_id")
-    @Reference(collection=Student.class, fields={"id"})
+    @Reference(collection=Student.class)
     Student student;
     Double value;
     int coefficient;
@@ -31,5 +31,21 @@ public class Mark extends GenericDao {
 
     public int getCoefficient() {
         return coefficient;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setStudent(Student student) {
+        this.student = student;
+    }
+
+    public void setValue(Double value) {
+        this.value = value;
+    }
+
+    public void setCoefficient(int coefficient) {
+        this.coefficient = coefficient;
     }
 }

@@ -1,5 +1,7 @@
-package mg.uniDao.core;
+package mg.uniDao.core.sql;
 
+import mg.uniDao.core.Database;
+import mg.uniDao.core.Service;
 import mg.uniDao.exception.DaoException;
 import mg.uniDao.exception.DatabaseException;
 
@@ -26,8 +28,12 @@ public interface GenericSqlDatabaseInterface extends Database {
     void setColumnNullable(Service service, String collectionName, String columnName, boolean nullable)
             throws DaoException, DatabaseException;
     void createSequence(Service service, String sequenceName) throws DaoException;
+    void dropColumnUnique(Service service, String collectionName, String columnName) throws DaoException;
     void setColumnUnique(Service service, String collectionName, String columnName, boolean unique)
             throws DaoException, DatabaseException;
     void setUnique(Service service, String collectionName, String[] columnName)
             throws DaoException, DatabaseException;
+    void addForeignKey(Service service, String collectionName, String columnName, String referenceCollection,
+                              String referenceColumn) throws DaoException, DatabaseException;
+    void dropForeignKey(Service service, String collectionName, String columnName) throws DaoException;
 }

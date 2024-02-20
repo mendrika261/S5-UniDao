@@ -1,6 +1,7 @@
 package mg.uniDao.util;
 
 import mg.uniDao.annotation.AutoSequence;
+import mg.uniDao.annotation.Reference;
 import mg.uniDao.core.Service;
 import mg.uniDao.exception.DaoException;
 
@@ -10,8 +11,7 @@ import java.lang.reflect.Method;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.*;
 
 public class ObjectUtils {
 
@@ -82,6 +82,17 @@ public class ObjectUtils {
         return attributes;
     }
 
+    public static HashMap<String, Object> getFieldsNamesWithValuesNonNull(Object object) throws DaoException {
+        final HashMap<String, Object> attributes = new HashMap<>();
+        for(final Field field: getDeclaredFields(object.getClass())) {
+            final String fieldName = field.getName();
+            Object fieldValue = getFieldValue(object, field);
+            if (fieldValue != null)
+                attributes.put(fieldName, fieldValue);
+        }
+        return attributes;
+    }
+
     public static String getAnnotatedFieldName(Field field) {
         if(field.isAnnotationPresent(mg.uniDao.annotation.Field.class))
             return field.getAnnotation(mg.uniDao.annotation.Field.class).name();
@@ -91,8 +102,17 @@ public class ObjectUtils {
     public static HashMap<Field, Object> getFieldsAnnotatedNameWithValues(Object object) throws DaoException {
         final HashMap<Field, Object> attributes = new HashMap<>();
         for(final Field field: getDeclaredFields(object.getClass())) {
-            //final String fieldName = getAnnotatedFieldName(field);
-            attributes.put(field, getFieldValue(object, field));
+            if(field.isAnnotationPresent(Reference.class)) {
+                Optional<String> principalKey = ObjectUtils.getPrimaryKeys(field.getType())
+                        .keySet().stream().findFirst();
+                Object fieldObject = getFieldValue(object, field);
+                attributes.put(field, getFieldValue(fieldObject, ObjectUtils.getDeclaredField(fieldObject.getClass(),
+                        principalKey.orElseThrow(() ->
+                                new DaoException("No primary key found in " + fieldObject.getClass().getName())))
+                        )
+                );
+            } else
+                attributes.put(field, getFieldValue(object, field));
         }
         return attributes;
     }
@@ -148,5 +168,34 @@ public class ObjectUtils {
             }
         }
         return primaryKeys;
+    }
+
+    public static Field getDeclaredField(Class<?> className, String fieldName) throws DaoException {
+        try {
+            return className.getDeclaredField(fieldName);
+        } catch (NoSuchFieldException e) {
+            throw new DaoException("Field: " + fieldName + " not found in " + className.getName());
+        }
+    }
+
+    public static List<String> getColumnNames(Class<?> objectClass) {
+        return Arrays.asList(Arrays.stream(getDeclaredFields(objectClass)).map(ObjectUtils::getAnnotatedFieldName)
+                .toArray(String[]::new));
+    }
+
+    public static List<String> getColumnNamesWithChildren(Class<?> objectClass, String prefix) {
+        Field[] fields = getDeclaredFields(objectClass);
+        List<String> columnNames = new ArrayList<>();
+        StringBuilder prefixBuilder = new StringBuilder(prefix);
+        for(Field field: fields) {
+            if(field.isAnnotationPresent(Reference.class)) {
+                Class<?> fieldClass = field.getType();
+                prefixBuilder.append(field.getName()).append(".");
+                columnNames.addAll(getColumnNamesWithChildren(fieldClass, prefixBuilder.toString()));
+            } else {
+                columnNames.add(prefix+getAnnotatedFieldName(field));
+            }
+        }
+        return columnNames;
     }
 }

@@ -1,14 +1,15 @@
-package mg.uniDao.core;
+package mg.uniDao.core.sql;
 
 import mg.uniDao.annotation.Collection;
 
+import mg.uniDao.core.Service;
 import mg.uniDao.exception.DaoException;
 import mg.uniDao.exception.DatabaseException;
 import mg.uniDao.util.ObjectUtils;
 
 import java.util.List;
 
-public class GenericDao {
+public class GenericSqlDao {
     private String getCollectionName() {
         if (getClass().isAnnotationPresent(Collection.class))
             return getClass().getAnnotation(Collection.class).name();
@@ -19,13 +20,14 @@ public class GenericDao {
         service.getDatabase().create(service, getCollectionName(), this);
     }
 
-    public <T> List<T> findList(Service service, int page, int limit, String extraCondition)
+    public <T> List<T> findList(Service service, int page, int limit, String extraCondition, String joins)
             throws DaoException {
-        return service.getDatabase().findList(service, getCollectionName(), (Class<T>) getClass(), page, limit, extraCondition);
+        return service.getDatabase().findList(service, getCollectionName(),
+                (Class<T>) getClass(), page, limit, extraCondition, joins);
     }
 
-    public <T> T find(Service service, String extraCondition) throws DaoException {
-        return service.getDatabase().find(service, getCollectionName(), this, extraCondition);
+    public <T> T find(Service service, String extraCondition, String... joins) throws DaoException {
+        return service.getDatabase().find(service, getCollectionName(), this, extraCondition, joins);
     }
 
     public void update(Service service, Object condition, String extraCondition) throws DaoException {
@@ -44,7 +46,7 @@ public class GenericDao {
     @Override
     public String toString() {
         try {
-            return String.valueOf(ObjectUtils.getFieldsNamesWithValues(this));
+            return String.valueOf(ObjectUtils.getFieldsNamesWithValuesNonNull(this));
         } catch (DaoException ignored) {}
         return null;
     }

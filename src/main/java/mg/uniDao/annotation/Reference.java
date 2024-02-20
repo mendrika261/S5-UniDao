@@ -9,6 +9,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface Reference {
     Class<?> collection();
-    String[] fields() default {};
-    String orderBy() default "";
+    String field() default "id";
+    String orderBy() default "id DESC";
 }
