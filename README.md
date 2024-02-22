@@ -2,7 +2,6 @@
 
 The goal of this project is to create a straightforward and fully operational cross-database platform (Data Access Object - DAO) that can manage data across different types of databases, including SQL and NoSQL.
 
-
 ## Documentation
 🛠️ Work in progress... ⌛️
 

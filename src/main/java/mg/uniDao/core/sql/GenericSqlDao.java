@@ -10,10 +10,8 @@ import mg.uniDao.util.ObjectUtils;
 import java.util.List;
 
 public class GenericSqlDao {
-    private String getCollectionName() {
-        if (getClass().isAnnotationPresent(Collection.class))
-            return getClass().getAnnotation(Collection.class).name();
-        return getClass().getSimpleName().toLowerCase();
+    private String getCollectionName() throws DaoException {
+        return ObjectUtils.getCollectionName(getClass());
     }
 
     public void save(Service service) throws DaoException {

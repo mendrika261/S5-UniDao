@@ -132,8 +132,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
                                 joiner.equalsIgnoreCase(finalReference + field.getName()))) {
                     final Reference referenceAnnotation = field.getAnnotation(Reference.class);
                     final Class<?> referenceClass = referenceAnnotation.collection();
-                    final String referencePrefix = reference +
-                                                    referenceClass.getAnnotation(Collection.class).name();
+                    final String referencePrefix = reference + ObjectUtils.getCollectionName(referenceClass);
                     final Object referenceObject = resultSetToObject(resultSet, referenceClass, referencePrefix);
                     ObjectUtils.setFieldValue(object, field, referenceObject);
                 } else { // set only the reference id
@@ -166,7 +165,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
             final String insideJoinField = joinParts[joinParts.length - 1];
             final Field field = ObjectUtils.getDeclaredField(className, insideJoinField);
             final Reference reference = field.getAnnotation(Reference.class);
-            final String outsideJoinCollection = reference.collection().getAnnotation(Collection.class).name();
+            final String outsideJoinCollection = ObjectUtils.getCollectionName(reference.collection());
             final String outsideJoinFieldOrCondition = reference.field();
             final List<String> columns = ObjectUtils.getColumnNamesWithChildren(reference.collection(), "");
 
@@ -442,7 +441,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
                     if(referenceCollection == null)
                         throw new DaoException("Reference collection is not a collection (annotate with @Collection)");
                     addForeignKey(service, collectionName, ObjectUtils.getAnnotatedFieldName(field),
-                            referenceCollection.name(),
+                            ObjectUtils.getCollectionName(annotation.collection()),
                             annotation.field());
                 }
             }

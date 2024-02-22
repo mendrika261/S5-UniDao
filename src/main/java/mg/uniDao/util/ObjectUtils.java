@@ -1,6 +1,7 @@
 package mg.uniDao.util;
 
 import mg.uniDao.annotation.AutoSequence;
+import mg.uniDao.annotation.Collection;
 import mg.uniDao.annotation.Reference;
 import mg.uniDao.core.Service;
 import mg.uniDao.exception.DaoException;
@@ -197,5 +198,14 @@ public class ObjectUtils {
             }
         }
         return columnNames;
+    }
+
+    public static String getCollectionName(Class<?> objectClass) throws DaoException {
+        if (!objectClass.isAnnotationPresent(mg.uniDao.annotation.Collection.class))
+            throw new DaoException(objectClass.getSimpleName() + " is not a collection, " +
+                    "it should be annotated with @Collection to inherit methods.");
+        if (!objectClass.getAnnotation(mg.uniDao.annotation.Collection.class).name().isEmpty())
+            return objectClass.getAnnotation(Collection.class).name();
+        return objectClass.getSimpleName().toLowerCase();
     }
 }
