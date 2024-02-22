@@ -404,7 +404,8 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     }
 
     @Override
-    public void createCollection(Service service, String collectionName, Class<?> objectClass) throws DaoException, DatabaseException {
+    public void createCollection(Service service, String collectionName, Class<?> objectClass)
+            throws DaoException, DatabaseException {
         final String createSql = createCollectionSQL(collectionName);
         final Field[] fields = ObjectUtils.getDeclaredFields(objectClass);
 
@@ -437,8 +438,11 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
 
                 if(field.isAnnotationPresent(Reference.class)) {
                     Reference annotation = field.getAnnotation(Reference.class);
+                    Collection referenceCollection = annotation.collection().getAnnotation(Collection.class);
+                    if(referenceCollection == null)
+                        throw new DaoException("Reference collection is not a collection (annotate with @Collection)");
                     addForeignKey(service, collectionName, ObjectUtils.getAnnotatedFieldName(field),
-                            annotation.collection().getAnnotation(Collection.class).name(),
+                            referenceCollection.name(),
                             annotation.field());
                 }
             }
