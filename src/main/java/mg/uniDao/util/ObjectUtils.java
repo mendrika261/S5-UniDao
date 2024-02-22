@@ -95,7 +95,8 @@ public class ObjectUtils {
     }
 
     public static String getAnnotatedFieldName(Field field) {
-        if(field.isAnnotationPresent(mg.uniDao.annotation.Field.class))
+        if(field.isAnnotationPresent(mg.uniDao.annotation.Field.class)
+                && !field.getAnnotation(mg.uniDao.annotation.Field.class).name().isEmpty())
             return field.getAnnotation(mg.uniDao.annotation.Field.class).name();
         return field.getName();
     }
@@ -108,10 +109,7 @@ public class ObjectUtils {
                         .keySet().stream().findFirst();
                 Object fieldObject = getFieldValue(object, field);
                 attributes.put(field, getFieldValue(fieldObject, ObjectUtils.getDeclaredField(fieldObject.getClass(),
-                        principalKey.orElseThrow(() ->
-                                new DaoException("No primary key found in " + fieldObject.getClass().getName())))
-                        )
-                );
+                        principalKey.orElseThrow())));
             } else
                 attributes.put(field, getFieldValue(object, field));
         }
@@ -159,15 +157,17 @@ public class ObjectUtils {
         }
     }
 
-    public static HashMap<String, String> getPrimaryKeys(Class<?> objectClass) {
+    public static HashMap<String, String> getPrimaryKeys(Class<?> objectClass) throws DaoException {
         final HashMap<String, String> primaryKeys = new HashMap<>();
         final Field[] fields = getDeclaredFields(objectClass);
         for(Field field: fields) {
             if (field.isAnnotationPresent(mg.uniDao.annotation.Field.class)
                     && field.getAnnotation(mg.uniDao.annotation.Field.class).isPrimaryKey()) {
-                primaryKeys.put(field.getName(), field.getAnnotation(mg.uniDao.annotation.Field.class).name());
+                primaryKeys.put(field.getName(), ObjectUtils.getAnnotatedFieldName(field));
             }
         }
+        if (primaryKeys.isEmpty())
+            throw new DaoException("No primary key found in " + objectClass.getName());
         return primaryKeys;
     }
 

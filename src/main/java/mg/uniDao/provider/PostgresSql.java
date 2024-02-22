@@ -142,12 +142,13 @@ public class PostgresSql extends GenericSqlDatabase {
 
     @Override
     protected String dropForeignKeySQL(String collectionName, String columnName) {
-        return "ALTER TABLE \"" + collectionName + "\" DROP CONSTRAINT IF EXISTS " + collectionName + "_" + columnName + "_fkey";
+        return "ALTER TABLE \"" + collectionName + "\" DROP CONSTRAINT IF EXISTS " + collectionName + "_"
+                + columnName + "_fkey CASCADE";
     }
 
     @Override
     protected String dropCollectionSQL(String collectionName) {
-        return "DROP TABLE IF EXISTS \"" + collectionName + "\"";
+        return "DROP TABLE IF EXISTS \"" + collectionName + "\" CASCADE";
     }
 
     @Override
@@ -158,7 +159,7 @@ public class PostgresSql extends GenericSqlDatabase {
 
     @Override
     protected  String dropPrimaryKeySQL(String collectionName) {
-        return "ALTER TABLE \"" + collectionName + "\" DROP CONSTRAINT IF EXISTS " + collectionName + "_pkey";
+        return "ALTER TABLE \"" + collectionName + "\" DROP CONSTRAINT IF EXISTS " + collectionName + "_pkey CASCADE";
     }
 
     @Override
@@ -169,8 +170,8 @@ public class PostgresSql extends GenericSqlDatabase {
 
     @Override
     protected String setColumnNullableSQL(String collectionName, String columnName, boolean nullable) {
-        return "ALTER TABLE \"" + collectionName + "\" ALTER COLUMN \"" + columnName + "\" " + (nullable ? "DROP" : "SET")
-                + " NOT NULL";
+        return "ALTER TABLE \"" + collectionName + "\" ALTER COLUMN \"" + columnName + "\" "
+                + (nullable ? "DROP" : "SET") + " NOT NULL";
     }
 
     @Override
@@ -186,7 +187,7 @@ public class PostgresSql extends GenericSqlDatabase {
     @Override
     protected String dropColumnUniqueSQL(String collectionName, String columnName) {
         return "ALTER TABLE \"" + collectionName + "\" DROP CONSTRAINT IF EXISTS " + collectionName + "_"
-                + columnName + "_key";
+                + columnName + "_key CASCADE";
     }
 
     @Override
@@ -197,6 +198,6 @@ public class PostgresSql extends GenericSqlDatabase {
 
     @Override
     protected String dropUniqueSQL(String collectionName) {
-        return "ALTER TABLE \"" + collectionName + "\" DROP CONSTRAINT IF EXISTS " + collectionName + "_unique";
+        return "ALTER TABLE \"" + collectionName + "\" DROP CONSTRAINT IF EXISTS " + collectionName + "_unique CASCADE";
     }
 }

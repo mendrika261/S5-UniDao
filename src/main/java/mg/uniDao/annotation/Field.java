@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface Field {
-    String name();
+    String name() default "";
     boolean isPrimaryKey() default false;
     boolean isNullable() default true;
     boolean isUnique() default false;

@@ -35,17 +35,19 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     @Override
     public void loadDriver() throws DatabaseException {
         if(!DRIVER_LOADED) {
+            if(DRIVER == null)
+                throw new DatabaseException("Driver is not set in the .env file");
             try {
                 Class.forName(DRIVER);
             } catch (ClassNotFoundException e) {
-                throw new DatabaseException("Cannot find the driver - " + DRIVER);
+                throw new DatabaseException("Cannot find the driver: " + DRIVER);
             }
             DRIVER_LOADED = true;
         }
     }
 
     @Override
-    public Service connect(boolean transaction) throws DatabaseException {
+    public Service connect(boolean transaction) throws DatabaseException, DaoException {
         loadDriver();
         final Connection connection;
         try {
@@ -59,7 +61,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     }
 
     @Override
-    public Service connect() throws DatabaseException {
+    public Service connect() throws DatabaseException, DaoException {
         return connect(true);
     }
 
@@ -110,6 +112,11 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         final HashMap<Field, Object> attributes = ObjectUtils.getFieldsAnnotatedNameWithValues(object);
         final String sql = createSQL(collectionName, attributes);
         execute(service, sql, attributes);
+    }
+
+    @Override
+    public void create(Service service, Object object) throws DaoException {
+        create(service, ObjectUtils.getCollectionName(object.getClass()), object);
     }
 
     private <T> T resultSetToObject(ResultSet resultSet, Class<T> className, String reference, String... join)
@@ -431,6 +438,9 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
                 }
 
                 if(field.isAnnotationPresent(AutoSequence.class)) {
+                    if(field.getType() != String.class)
+                        throw new DaoException("Auto sequence field: '" + field.getName() + "' must be a String " +
+                                "in " + objectClass.getName());
                     AutoSequence annotation = field.getAnnotation(AutoSequence.class);
                     createSequence(service, annotation.name() + Config.SEQUENCE_SUFFIX);
                 }
@@ -459,16 +469,25 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         }
     }
 
+    @Override
+    public void createCollection(Service service, Class<?> objectClass)
+            throws DaoException, DatabaseException {
+        createCollection(service, ObjectUtils.getCollectionName(objectClass), objectClass);
+    }
 
-    public String getUrl() {
+    public String getUrl() throws DaoException {
+        if (url == null)
+            throw new DaoException("Database url is not set in the .env file");
         return url;
     }
 
-    public void setUrl(String url) {
+    public void setUrl(String url) throws DaoException {
         this.url = url;
     }
 
-    public String getUsername() {
+    public String getUsername() throws DaoException {
+        if (username == null)
+            throw new DaoException("Database username is not set in the .env file");
         return username;
     }
 
@@ -477,6 +496,8 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     }
 
     public String getPassword() {
+        if (password == null)
+            GeneralLog.println("You are using the database without a password", GeneralLog.WARNING_COLOR);
         return password;
     }
 

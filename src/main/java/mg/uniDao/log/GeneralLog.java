@@ -3,11 +3,11 @@ package mg.uniDao.log;
 import java.time.LocalDateTime;
 
 public class GeneralLog {
-    private static final String INFO_COLOR = "\u001B[34m";
-    private static final String ERROR_COLOR = "\u001B[31m";
-    private static final String WARNING_COLOR = "\u001B[33m";
-    private static final String WHITE_COLOR = "\u001B[37m";
-    private static final String RESET_COLOR = "\u001B[0m";
+    public static final String INFO_COLOR = "\u001B[34m";
+    public static final String ERROR_COLOR = "\u001B[31m";
+    public static final String WARNING_COLOR = "\u001B[33m";
+    public static final String WHITE_COLOR = "\u001B[37m";
+    public static final String RESET_COLOR = "\u001B[0m";
 
     public static void print(String message, String color) {
         System.out.print(color + message + RESET_COLOR);

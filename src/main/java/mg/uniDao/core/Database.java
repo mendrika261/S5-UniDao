@@ -8,9 +8,10 @@ import java.util.List;
 
 public interface Database {
      void loadDriver() throws DatabaseException;
-     Service connect(boolean transaction) throws DatabaseException;
-     Service connect() throws DatabaseException;
+     Service connect(boolean transaction) throws DatabaseException, DaoException;
+     Service connect() throws DatabaseException, DaoException;
      void create(Service service, String collectionName, Object object) throws DaoException;
+     void create(Service service, Object object) throws DaoException;
      <T> List<T> findList(Service service, String collectionName, Class<T> className, int page, int limit,
                           String extraCondition, String... joins) throws DaoException;
      <T> T find(Service service, String collectionName, Object condition, String extraCondition, String... joins)
@@ -22,5 +23,7 @@ public interface Database {
      String getNextSequenceValue(Service service, String sequenceName)
              throws DaoException;
      void createCollection(Service service, String collectionName, Class<?> objectClass) throws DaoException,
+             DatabaseException;
+     void createCollection(Service service, Class<?> objectClass) throws DaoException,
              DatabaseException;
 }
