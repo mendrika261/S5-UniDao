@@ -4,6 +4,7 @@ import mg.uniDao.annotation.AutoSequence;
 import mg.uniDao.annotation.Collection;
 import mg.uniDao.annotation.Reference;
 import mg.uniDao.core.Service;
+import mg.uniDao.core.sql.GenericSqlDao;
 import mg.uniDao.exception.DaoException;
 
 import java.lang.reflect.Field;
@@ -74,6 +75,7 @@ public class ObjectUtils {
         return allFields;
     }
 
+    // field name: field value
     public static HashMap<String, Object> getFieldsNamesWithValues(Object object) throws DaoException {
         final HashMap<String, Object> attributes = new HashMap<>();
         for(final Field field: getDeclaredFields(object.getClass())) {
@@ -119,6 +121,10 @@ public class ObjectUtils {
     public static HashMap<Field, Object> getFieldsNotNullAnnotatedNameWithValues(Object object, boolean throwPrimitiveType)
             throws DaoException {
         final HashMap<Field, Object> attributes = new HashMap<>();
+
+        if (object == null)
+            return attributes;
+
         final Field[] fields = getDeclaredFields(object.getClass());
         for(final Field field: fields) {
             if(throwPrimitiveType && field.getType().isPrimitive())
@@ -157,6 +163,7 @@ public class ObjectUtils {
         }
     }
 
+    // field name: annotated field name
     public static HashMap<String, String> getPrimaryKeys(Class<?> objectClass) throws DaoException {
         final HashMap<String, String> primaryKeys = new HashMap<>();
         final Field[] fields = getDeclaredFields(objectClass);
@@ -170,6 +177,22 @@ public class ObjectUtils {
             throw new DaoException("No primary key found in " + objectClass.getName());
         return primaryKeys;
     }
+
+    // field name: value
+    public static HashMap<String, Object> getPrimaryKeysWithValue(Object object) throws DaoException {
+        final HashMap<String, Object> primaryKeys = new HashMap<>();
+        final Field[] fields = getDeclaredFields(object.getClass());
+        for(Field field: fields) {
+            if (field.isAnnotationPresent(mg.uniDao.annotation.Field.class)
+                    && field.getAnnotation(mg.uniDao.annotation.Field.class).isPrimaryKey()) {
+                primaryKeys.put(field.getName(), ObjectUtils.getFieldValue(object, field));
+            }
+        }
+        if (primaryKeys.isEmpty())
+            throw new DaoException("No primary key found in " + object.getClass().getName());
+        return primaryKeys;
+    }
+
 
     public static Field getDeclaredField(Class<?> className, String fieldName) throws DaoException {
         try {
@@ -207,5 +230,30 @@ public class ObjectUtils {
         if (!objectClass.getAnnotation(mg.uniDao.annotation.Collection.class).name().isEmpty())
             return objectClass.getAnnotation(Collection.class).name();
         return objectClass.getSimpleName().toLowerCase();
+    }
+
+    public static void fillPrimaryKeys(Object condition, Object object) {
+        final Field[] fields = getDeclaredFields(condition.getClass());
+        for(Field field: fields) {
+            if (field.isAnnotationPresent(mg.uniDao.annotation.Field.class)
+                    && field.getAnnotation(mg.uniDao.annotation.Field.class).isPrimaryKey()) {
+                try {
+                    ObjectUtils.setFieldValue(condition, field, ObjectUtils.getFieldValue(object, field));
+                } catch (DaoException ignored) {}
+            }
+        }
+    }
+
+    public static String getId(Object object) {
+        final Field[] fields = getDeclaredFields(object.getClass());
+        for(Field field: fields) {
+            if (field.isAnnotationPresent(mg.uniDao.annotation.Field.class)
+                    && field.getAnnotation(mg.uniDao.annotation.Field.class).isPrimaryKey()) {
+                try {
+                    return (String) ObjectUtils.getFieldValue(object, field);
+                } catch (DaoException ignored) {}
+            }
+        }
+        return null;
     }
 }

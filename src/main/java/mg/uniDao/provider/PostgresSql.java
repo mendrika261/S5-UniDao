@@ -135,7 +135,8 @@ public class PostgresSql extends GenericSqlDatabase {
     }
 
     @Override
-    protected String addForeignKeySQL(String collectionName, String columnName, String referenceCollection, String referenceColumn) throws DatabaseException {
+    protected String addForeignKeySQL(String collectionName, String columnName, String referenceCollection,
+                                      String referenceColumn) throws DatabaseException {
         return "ALTER TABLE \"" + collectionName + "\" ADD CONSTRAINT " + collectionName + "_" + columnName + "_fkey "
                 + "FOREIGN KEY (" + columnName + ") REFERENCES \"" + referenceCollection + "\" (\"" + referenceColumn + "\")";
     }

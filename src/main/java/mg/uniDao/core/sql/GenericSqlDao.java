@@ -1,7 +1,5 @@
 package mg.uniDao.core.sql;
 
-import mg.uniDao.annotation.Collection;
-
 import mg.uniDao.core.Service;
 import mg.uniDao.exception.DaoException;
 import mg.uniDao.exception.DatabaseException;
@@ -10,35 +8,73 @@ import mg.uniDao.util.ObjectUtils;
 import java.util.List;
 
 public class GenericSqlDao {
-    private String getCollectionName() throws DaoException {
-        return ObjectUtils.getCollectionName(getClass());
+    public GenericSqlDao() {
     }
 
     public void save(Service service) throws DaoException {
-        service.getDatabase().create(service, getCollectionName(), this);
+        service.getDatabase().create(service, this);
     }
 
-    public <T> List<T> findList(Service service, int page, int limit, String extraCondition, String joins)
+    public <T> List<T> getList(Service service, String condition, int page, int limit, String... joins)
             throws DaoException {
-        return service.getDatabase().findList(service, getCollectionName(),
-                (Class<T>) getClass(), page, limit, extraCondition, joins);
+        return service.getDatabase().findList(service, (Class<T>) getClass(), condition, page, limit, joins);
     }
 
-    public <T> T find(Service service, String extraCondition, String... joins) throws DaoException {
-        return service.getDatabase().find(service, getCollectionName(), this, extraCondition, joins);
+    public <T> List<T> getList(Service service, int page, int limit, String... joins)
+            throws DaoException {
+        return service.getDatabase().findList(service, (Class<T>) getClass(), page, limit, joins);
     }
 
-    public void update(Service service, Object condition, String extraCondition) throws DaoException {
-        service.getDatabase().update(service, getCollectionName(), condition, this, extraCondition);
+    public <T> List<T> getList(Service service, String... joins) throws DaoException {
+        return service.getDatabase().findList(service, (Class<T>) getClass(), joins);
     }
 
-    public void delete(Service service, String extraCondition) throws DaoException {
-        service.getDatabase().delete(service, getCollectionName(), this, extraCondition);
+    public <T> T get(Service service, String condition, String[] joins) throws DaoException {
+        return service.getDatabase().find(service, getClass(), condition, joins);
     }
 
+    public <T> T get(Service service, String... joins) throws DaoException {
+        return service.getDatabase().find(service, this, joins);
+    }
+
+    public <T> T getById(Service service, String id, String... joins) throws DaoException {
+        return service.getDatabase().findById(service, getClass(), id, joins);
+    }
+
+    public boolean exists(Service service) throws DaoException {
+        return service.getDatabase().exists(service, this);
+    }
+
+    public boolean existsById(Service service) throws DaoException {
+        return service.getDatabase().existsById(service, getClass(), ObjectUtils.getId(this));
+    }
+
+    public void update(Service service) throws DaoException {
+        service.getDatabase().updateById(service, this, ObjectUtils.getId(this));
+    }
+
+    public void update(Service service, String condition) throws DaoException {
+        service.getDatabase().update(service, this, condition);
+    }
+
+    public void update(Service service, Object conditionObject) throws DaoException {
+        service.getDatabase().update(service, this, conditionObject);
+    }
+
+    public void delete(Service service) throws DaoException {
+        service.getDatabase().deleteById(service, getClass(), ObjectUtils.getId(this));
+    }
+
+    public void delete(Service service, String condition) throws DaoException {
+        service.getDatabase().delete(service, getClass(), condition);
+    }
+
+    public void delete(Service service, Object conditionObject) throws DaoException {
+        service.getDatabase().delete(service, conditionObject);
+    }
 
     public void createCollection(Service service) throws DaoException, DatabaseException {
-        service.getDatabase().createCollection(service, getCollectionName(), this.getClass());
+        service.getDatabase().createCollection(service, this.getClass());
     }
 
     @Override

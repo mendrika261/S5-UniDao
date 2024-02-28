@@ -107,16 +107,36 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     protected abstract String createSQL(String collectionName, HashMap<Field, Object> attributes);
 
     @Override
-    public void create(Service service, String collectionName, Object object) throws DaoException {
+    public void create(Service service, Object object) throws DaoException {
         ObjectUtils.fillAutoSequence(service, object);
         final HashMap<Field, Object> attributes = ObjectUtils.getFieldsAnnotatedNameWithValues(object);
-        final String sql = createSQL(collectionName, attributes);
+        final String sql = createSQL(ObjectUtils.getCollectionName(object.getClass()), attributes);
         execute(service, sql, attributes);
     }
 
     @Override
-    public void create(Service service, Object object) throws DaoException {
-        create(service, ObjectUtils.getCollectionName(object.getClass()), object);
+    public boolean exists(Service service, Class<?> className, String condition) throws DaoException {
+        return find(service, className, condition) != null;
+    }
+
+    @Override
+    public boolean exists(Service service, Object conditionObject) throws DaoException {
+        return find(service, conditionObject) != null;
+    }
+
+    @Override
+    public boolean existsById(Service service, Class<?> className, String id) throws DaoException {
+        HashMap<Field, Object> conditions = new HashMap<>();
+        conditions.put(ObjectUtils.getDeclaredField(className, ObjectUtils.getPrimaryKeys(className).values().stream().toList().get(0)), id);
+        return find(service, className, conditions, "") != null;
+    }
+
+    @Override
+    public void createOrUpdate(Service service, Object object) throws DaoException {
+        if(exists(service, object))
+            update(service, object, "");
+        else
+            create(service, object);
     }
 
     private <T> T resultSetToObject(ResultSet resultSet, Class<T> className, String reference, String... join)
@@ -186,10 +206,11 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     }
 
     @Override
-    public <T> List<T> findList(Service service, String collectionName, Class<T> className, int page, int limit,
-                                String extraCondition, String... joins) throws DaoException {
+    public <T> List<T> findList(Service service, Class<T> className, String condition, int page, int limit,
+                                String... joins) throws DaoException {
         final Connection connection = (Connection) service.getAccess();
-        final String sql = findListWithLimitSQL(collectionName, extraCondition, extractJoinersFrom(className, joins));
+        final String sql = findListWithLimitSQL(ObjectUtils.getCollectionName(className), condition,
+                extractJoinersFrom(className, joins));
         final List<T> objects = new ArrayList<T>();
 
         try {
@@ -216,16 +237,28 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         }
     }
 
+    @Override
+    public <T> List<T> findList(Service service, Class<T> className, int page, int limit, String... joins)
+            throws DaoException {
+        return findList(service, className, "", page, limit, joins);
+    }
+
+    @Override
+    public <T> List<T> findList(Service service, Class<T> className, String... joins) throws DaoException {
+        // TODO: show warning if the list is too long
+        return findList(service, className, "", 1, Integer.MAX_VALUE, joins);
+    }
+
     protected abstract String findSQL(String collectionName, HashMap<Field, Object> conditions,
                                       String extraCondition, List<Joiner> joiners);
 
     @Override
-    public <T> T find(Service service, String collectionName, Object condition, String extraCondition, String... joins)
+    public <T> T find(Service service, Class<?> className, Object conditionObject, String condition, String... joins)
             throws DaoException {
         final Connection connection = (Connection) service.getAccess();
-        final HashMap<Field, Object> conditions = ObjectUtils.getFieldsNotNullAnnotatedNameWithValues(condition);
-        final String sql = findSQL(collectionName, conditions, extraCondition,
-                                        extractJoinersFrom(condition.getClass(), joins));
+        final HashMap<Field, Object> conditions = ObjectUtils.getFieldsNotNullAnnotatedNameWithValues(conditionObject);
+        final String sql = findSQL(ObjectUtils.getCollectionName(className), conditions, condition,
+                                        extractJoinersFrom(className, joins));
 
         try {
             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
@@ -236,7 +269,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
 
             T object = null;
             if(resultSet.next())
-                object = resultSetToObject(resultSet, (Class<T>) condition.getClass(), "", joins);
+                object = resultSetToObject(resultSet, (Class<T>) className, "", joins);
 
             resultSet.close();
             preparedStatement.close();
@@ -249,27 +282,84 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         }
     }
 
+    @Override
+    public <T> T find(Service service, Object conditionObject, String... joins) throws DaoException {
+        if (conditionObject == null)
+            throw new DaoException("Condition cannot be null");
+        return find(service, conditionObject.getClass(), conditionObject, "", joins);
+    }
+
+    @Override
+    public <T> T find(Service service, Class<?> className, String condition, String... joins)
+            throws DaoException {
+        return find(service, className, null, condition, joins);
+    }
+
+    @Override
+    public <T> T findById(Service service, Class<?> className, String id, String... joins) throws DaoException {
+        final HashMap<Field, Object> conditions = new HashMap<>();
+        conditions.put(ObjectUtils.getDeclaredField(className, ObjectUtils.getPrimaryKeys(className).values().stream().toList().get(0)), id);
+        return find(service, className, conditions, "", joins);
+    }
+
     protected abstract String updateSQL(String collectionName, HashMap<Field, Object> attributes,
                                         HashMap<Field, Object> conditions, String extraCondition);
 
     @Override
-    public void update(Service service, String collectionName, Object condition, Object object, String extraCondition)
+    public void update(Service service, Object newObject, Object conditionObject, String condition)
             throws DaoException {
-        final HashMap<Field, Object> values = ObjectUtils.getFieldsNotNullAnnotatedNameWithValues(object, true);
-        final HashMap<Field, Object> conditions = ObjectUtils.getFieldsNotNullAnnotatedNameWithValues(condition);
-        final String sql = updateSQL(collectionName, values, conditions, extraCondition);
+        final HashMap<Field, Object> values = ObjectUtils.getFieldsNotNullAnnotatedNameWithValues(newObject, true);
+        final HashMap<Field, Object> conditions = ObjectUtils.getFieldsNotNullAnnotatedNameWithValues(conditionObject);
+        final String sql = updateSQL(ObjectUtils.getCollectionName(newObject.getClass()), values, conditions, condition);
         values.putAll(conditions);
         execute(service, sql, values);
     }
 
+    @Override
+    public void update(Service service, Object newObject, String condition) throws DaoException {
+        update(service, newObject, null, condition);
+    }
+
+    @Override
+    public void update(Service service, Object newObject, Object conditionObject) throws DaoException {
+        update(service, conditionObject, newObject, "");
+    }
+
+    @Override
+    public void updateById(Service service, Object object, String id) throws DaoException {
+        final HashMap<Field, Object> conditions = new HashMap<>();
+        conditions.put(ObjectUtils.getDeclaredField(object.getClass(), ObjectUtils.getPrimaryKeys(object.getClass()).values().stream().toList().get(0)), id);
+        update(service, object, conditions, "");
+    }
+
+
     protected abstract String deleteSQL(String collectionName, HashMap<Field, Object> conditions, String extraCondition);
 
     @Override
-    public void delete(Service service, String collectionName, Object condition, String extraCondition)
+    public void delete(Service service, Class<?> className, Object conditionObject, String condition)
             throws DaoException {
-        final HashMap<Field, Object> conditions = ObjectUtils.getFieldsNotNullAnnotatedNameWithValues(condition, true);
-        final String sql = deleteSQL(collectionName, conditions, extraCondition);
+        final HashMap<Field, Object> conditions = ObjectUtils.getFieldsNotNullAnnotatedNameWithValues(conditionObject, true);
+        final String sql = deleteSQL(ObjectUtils.getCollectionName(className), conditions, condition);
         execute(service, sql, conditions);
+    }
+
+    @Override
+    public void delete(Service service, Object conditionObject) throws DaoException {
+        if (conditionObject == null)
+            throw new DaoException("Condition cannot be null");
+        delete(service, conditionObject.getClass(), conditionObject, "");
+    }
+
+    @Override
+    public void delete(Service service, Class<?> className, String condition) throws DaoException {
+        delete(service, className, null, condition);
+    }
+
+    @Override
+    public void deleteById(Service service, Class<?> className, String id) throws DaoException {
+        final HashMap<Field, Object> conditions = new HashMap<>();
+        conditions.put(ObjectUtils.getDeclaredField(className, ObjectUtils.getPrimaryKeys(className).values().stream().toList().get(0)), id);
+        delete(service, className, conditions, "");
     }
 
     protected abstract String getNextSequenceValueSql(String sequenceName);
@@ -410,8 +500,9 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     }
 
     @Override
-    public void createCollection(Service service, String collectionName, Class<?> objectClass)
+    public void createCollection(Service service, Class<?> objectClass)
             throws DaoException, DatabaseException {
+        final String collectionName = ObjectUtils.getCollectionName(objectClass);
         final String createSql = createCollectionSQL(collectionName);
         final Field[] fields = ObjectUtils.getDeclaredFields(objectClass);
 
@@ -467,12 +558,6 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         } catch (Exception e) {
             throw new DaoException(e.getMessage());
         }
-    }
-
-    @Override
-    public void createCollection(Service service, Class<?> objectClass)
-            throws DaoException, DatabaseException {
-        createCollection(service, ObjectUtils.getCollectionName(objectClass), objectClass);
     }
 
     public String getUrl() throws DaoException {

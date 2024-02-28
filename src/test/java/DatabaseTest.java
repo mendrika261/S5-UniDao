@@ -63,8 +63,8 @@ public class DatabaseTest {
     void testFindList() throws DatabaseException, DaoException {
         Database postgresSql = new PostgresSql();
         Service service = postgresSql.connect();
-        List<Mark> studentList = postgresSql.findList(service, "mark", Mark.class,
-                1, 10, "", "student");
+        List<Mark> studentList = postgresSql.findList(service, Mark.class,
+                1, 10, new String[]{"student"});
         System.out.println(studentList);
         service.endConnection();
     }
@@ -75,7 +75,7 @@ public class DatabaseTest {
         Service service = postgresSql.connect();
         Mark mark = new Mark();
         mark.setCoefficient(1);
-        mark = mark.find(service,"", "student");
+        mark = mark.get(service, "student");
         System.out.println(mark);
         assertNotNull(mark, "Read failed");
         service.endConnection();
@@ -89,7 +89,7 @@ public class DatabaseTest {
         condition.setBirthdate(LocalDate.now());
         Student student = new Student();
         student.setBirthdate(LocalDate.now());
-        student.update(service, condition, "");
+        student.update(service, condition);
         service.endConnection();
     }
 
