@@ -1,7 +1,15 @@
 package mg.uniDao.exception;
 
-public class DatabaseException extends GenericException {
+import mg.uniDao.log.GeneralLog;
+
+public class DatabaseException extends RuntimeException {
     public DatabaseException(String message) {
-        super("(Database)\n-> " + message);
+        setStackTrace(new StackTraceElement[0]);
+        GeneralLog.printError(message);
+    }
+
+    @Override
+    public String toString() {
+        return "";
     }
 }

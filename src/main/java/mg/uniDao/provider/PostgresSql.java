@@ -2,7 +2,6 @@ package mg.uniDao.provider;
 
 import mg.uniDao.core.sql.GenericSqlDatabase;
 import mg.uniDao.core.sql.Joiner;
-import mg.uniDao.exception.DatabaseException;
 import mg.uniDao.util.ObjectUtils;
 
 import java.lang.reflect.Field;
@@ -136,7 +135,7 @@ public class PostgresSql extends GenericSqlDatabase {
 
     @Override
     protected String addForeignKeySQL(String collectionName, String columnName, String referenceCollection,
-                                      String referenceColumn) throws DatabaseException {
+                                      String referenceColumn) {
         return "ALTER TABLE \"" + collectionName + "\" ADD CONSTRAINT " + collectionName + "_" + columnName + "_fkey "
                 + "FOREIGN KEY (" + columnName + ") REFERENCES \"" + referenceCollection + "\" (\"" + referenceColumn + "\")";
     }

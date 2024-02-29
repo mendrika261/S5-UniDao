@@ -8,9 +8,9 @@ import java.util.HashMap;
 import java.util.List;
 
 public interface Database {
-     void loadDriver() throws DatabaseException;
-     Service connect(boolean transaction) throws DatabaseException, DaoException;
-     Service connect() throws DatabaseException, DaoException;
+     void loadDriver() throws DaoException;
+     Service connect(boolean transaction) throws DaoException;
+     Service connect() throws DaoException;
      void create(Service service, Object object) throws DaoException;
 
      boolean exists(Service service, Class<?> className, String condition) throws DaoException;

@@ -1,7 +1,10 @@
 package mg.uniDao.exception;
 
-public class DaoException extends GenericException {
+import mg.uniDao.log.GeneralLog;
+
+public class DaoException extends Exception {
     public DaoException(String message) {
-        super("(DAO)\n-> " + message);
+        super();
+        GeneralLog.printError(message);
     }
 }

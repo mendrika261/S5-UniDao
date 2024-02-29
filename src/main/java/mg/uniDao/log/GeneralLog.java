@@ -22,4 +22,22 @@ public class GeneralLog {
         print("QUERY: ", INFO_COLOR);
         println(query, WHITE_COLOR);
     }
+
+    public static void printError(String message) {
+        print("[" + LocalDateTime.now() + "] ", WARNING_COLOR);
+        print("ERROR: ", ERROR_COLOR);
+        println(message, WHITE_COLOR);
+    }
+
+    public static void printWarning(String message) {
+        print("[" + LocalDateTime.now() + "] ", WARNING_COLOR);
+        print("WARNING: ", WARNING_COLOR);
+        println(message, WHITE_COLOR);
+    }
+
+    public static void printInfo(String message) {
+        print("[" + LocalDateTime.now() + "] ", WARNING_COLOR);
+        print("INFO: ", INFO_COLOR);
+        println(message, WHITE_COLOR);
+    }
 }

@@ -17,11 +17,15 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class DatabaseTest {
 
     @Test
-    void testPostgresSqlConnect() throws DatabaseException, DaoException {
-        Database postgresSql = new PostgresSql();
+    void testPostgresSqlConnect() throws DaoException {
+        /*Database postgresSql = new PostgresSql();
+
         Service service = postgresSql.connect(false);
         assertNotNull(service.getAccess(), "PostgresSql connect() failed");
-        service.endConnection();
+
+        service.endConnection();*/
+
+        throw new DaoException("test");
     }
 
     @Test

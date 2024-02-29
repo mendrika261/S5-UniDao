@@ -33,21 +33,21 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
 
 
     @Override
-    public void loadDriver() throws DatabaseException {
+    public void loadDriver() throws DaoException {
         if(!DRIVER_LOADED) {
             if(DRIVER == null)
-                throw new DatabaseException("Driver is not set in the .env file");
+                throw new DaoException("Driver is not set in the .env file");
             try {
                 Class.forName(DRIVER);
             } catch (ClassNotFoundException e) {
-                throw new DatabaseException("Cannot find the driver: " + DRIVER);
+                throw new DaoException("Cannot find the driver: " + DRIVER);
             }
             DRIVER_LOADED = true;
         }
     }
 
     @Override
-    public Service connect(boolean transaction) throws DatabaseException, DaoException {
+    public Service connect(boolean transaction) throws DaoException {
         loadDriver();
         final Connection connection;
         try {
@@ -55,27 +55,30 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
                     getUrl(), getUsername(), getPassword());
             connection.setAutoCommit(false);
         } catch (SQLException e) {
-            throw new DatabaseException("Credentials are not correct");
+            throw new DaoException("Credentials are not correct");
         }
         return new Service(this, connection, transaction);
     }
 
     @Override
-    public Service connect() throws DatabaseException, DaoException {
+    public Service connect() throws DaoException {
         return connect(true);
     }
 
     protected abstract String getMappingType(String type);
 
     @Override
-    public void prepareStatement(PreparedStatement preparedStatement, HashMap<Field, Object> attributes)
-            throws IllegalAccessException, InvocationTargetException, SQLException {
+    public void prepareStatement(PreparedStatement preparedStatement, HashMap<Field, Object> attributes) {
         int i = 1;
         for (Field key : attributes.keySet()) {
             try {
                 preparedStatement.setObject(i, attributes.get(key));
-            } catch (Exception e) {
-                preparedStatement.setString(i, Format.toJson(attributes.get(key)));
+            } catch (Exception ignored) {
+                try {
+                    preparedStatement.setString(i, Format.toJson(attributes.get(key)));
+                } catch (Exception ignored2) {
+                    throw new DatabaseException("Cannot set as string: \n" + Format.toJson(attributes.get(key)));
+                }
             }
             i++;
         }
@@ -93,9 +96,9 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
             preparedStatement.close();
             if (!service.isTransactional())
                 service.endConnection();
-        } catch (SQLException | IllegalAccessException | InvocationTargetException e) {
+        } catch (SQLException e) {
             service.endConnection();
-            throw new DaoException(e.getMessage());
+            throw new DatabaseException(e.getMessage());
         }
     }
 
@@ -125,14 +128,14 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         } catch (SQLException | NoSuchMethodException | InstantiationException | IllegalAccessException |
                  InvocationTargetException e) {
             service.endConnection();
-            throw new DaoException(e.getMessage());
+            throw new DatabaseException(e.getMessage());
         }
     }
 
     @Override
     public <T> List<T> queryList(Service service, Class<T> className, String query, int page, int limit) throws DaoException {
         final Connection connection = (Connection) service.getAccess();
-        final List<T> objects = new ArrayList<T>();
+        final List<T> objects = new ArrayList<>();
 
         try {
             final PreparedStatement preparedStatement = connection.prepareStatement(query);
@@ -154,14 +157,14 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         } catch (SQLException | NoSuchMethodException | InstantiationException | IllegalAccessException |
                  InvocationTargetException e) {
             service.endConnection();
-            throw new DaoException(e.getMessage());
+            throw new DatabaseException(e.getMessage());
         }
     }
 
     @Override
     public <T> List<T> queryList(Service service, Class<T> className, String query) throws DaoException {
         final Connection connection = (Connection) service.getAccess();
-        final List<T> objects = new ArrayList<T>();
+        final List<T> objects = new ArrayList<>();
 
         try {
             final PreparedStatement preparedStatement = connection.prepareStatement(query);
@@ -181,7 +184,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         } catch (SQLException | NoSuchMethodException | InstantiationException | IllegalAccessException |
                  InvocationTargetException e) {
             service.endConnection();
-            throw new DaoException(e.getMessage());
+            throw new DatabaseException(e.getMessage());
         }
     }
 
@@ -209,7 +212,8 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     @Override
     public boolean existsById(Service service, Class<?> className, String id) throws DaoException {
         HashMap<Field, Object> conditions = new HashMap<>();
-        conditions.put(ObjectUtils.getDeclaredField(className, ObjectUtils.getPrimaryKeys(className).values().stream().toList().get(0)), id);
+        conditions.put(ObjectUtils.getDeclaredField(className,
+                ObjectUtils.getPrimaryKeys(className).values().stream().toList().get(0)), id);
         return find(service, className, conditions, "") != null;
     }
 
@@ -315,7 +319,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         } catch (SQLException | NoSuchMethodException | InstantiationException | IllegalAccessException |
                  InvocationTargetException e) {
             service.endConnection();
-            throw new DaoException(e.getMessage());
+            throw new DatabaseException(e.getMessage());
         }
     }
 
@@ -327,7 +331,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
 
     @Override
     public <T> List<T> findList(Service service, Class<T> className, String... joins) throws DaoException {
-        // TODO: show warning if the list is too long
+        GeneralLog.printWarning("You are fetching the whole list of " + className.getName() + " from the database");
         return findList(service, className, "", 1, Integer.MAX_VALUE, joins);
     }
 
@@ -360,14 +364,14 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         } catch (SQLException | NoSuchMethodException | InstantiationException | IllegalAccessException |
                 InvocationTargetException e) {
             service.endConnection();
-            throw new DaoException(e.getMessage());
+            throw new DatabaseException(e.getMessage());
         }
     }
 
     @Override
     public <T> T find(Service service, Object conditionObject, String... joins) throws DaoException {
         if (conditionObject == null)
-            throw new DaoException("Condition cannot be null");
+            throw new DatabaseException("Condition cannot be null");
         return find(service, conditionObject.getClass(), conditionObject, "", joins);
     }
 
@@ -380,7 +384,8 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     @Override
     public <T> T findById(Service service, Class<?> className, String id, String... joins) throws DaoException {
         final HashMap<Field, Object> conditions = new HashMap<>();
-        conditions.put(ObjectUtils.getDeclaredField(className, ObjectUtils.getPrimaryKeys(className).values().stream().toList().get(0)), id);
+        conditions.put(ObjectUtils.getDeclaredField(className,
+                ObjectUtils.getPrimaryKeys(className).values().stream().toList().get(0)), id);
         return find(service, className, conditions, "", joins);
     }
 
@@ -410,7 +415,8 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     @Override
     public void updateById(Service service, Object object, String id) throws DaoException {
         final HashMap<Field, Object> conditions = new HashMap<>();
-        conditions.put(ObjectUtils.getDeclaredField(object.getClass(), ObjectUtils.getPrimaryKeys(object.getClass()).values().stream().toList().get(0)), id);
+        conditions.put(ObjectUtils.getDeclaredField(object.getClass(),
+                ObjectUtils.getPrimaryKeys(object.getClass()).values().stream().toList().get(0)), id);
         update(service, object, conditions, "");
     }
 
@@ -428,7 +434,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     @Override
     public void delete(Service service, Object conditionObject) throws DaoException {
         if (conditionObject == null)
-            throw new DaoException("Condition cannot be null");
+            throw new DatabaseException("Condition cannot be null");
         delete(service, conditionObject.getClass(), conditionObject, "");
     }
 
@@ -464,7 +470,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
             return result;
         } catch (SQLException e) {
             service.endConnection();
-            throw new DaoException(e.getMessage());
+            throw new DatabaseException(e.getMessage());
         }
     }
 
@@ -499,17 +505,16 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
 
     @Override
     public void alterColumnType(Service service, String collectionName, String columnName, String columnType)
-            throws DaoException, DatabaseException {
+            throws DaoException {
         final String sql = alterColumnTypeSQL(collectionName, columnName, columnType);
         execute(service, sql);
     }
 
-    protected abstract String setColumnNullableSQL(String collectionName, String columnName, boolean nullable)
-            throws DatabaseException;
+    protected abstract String setColumnNullableSQL(String collectionName, String columnName, boolean nullable);
 
     @Override
     public void setColumnNullable(Service service, String collectionName, String columnName, boolean nullable)
-            throws DaoException, DatabaseException {
+            throws DaoException {
         final String sql = setColumnNullableSQL(collectionName, columnName, nullable);
         execute(service, sql);
     }
@@ -534,7 +539,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
 
     @Override
     public void setColumnUnique(Service service, String collectionName, String columnName, boolean unique)
-            throws DaoException, DatabaseException {
+            throws DaoException {
         dropColumnUnique(service, collectionName, columnName);
         if(unique) {
             final String addSQL = addColumnUniqueSQL(collectionName, columnName);
@@ -548,7 +553,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
 
     @Override
     public void setUnique(Service service, String collectionName, String[] columnName)
-            throws DaoException, DatabaseException {
+            throws DaoException {
         final String dropSQL = dropUniqueSQL(collectionName);
         execute(service, dropSQL);
         if(columnName.length > 0) {
@@ -575,7 +580,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
 
     @Override
     public void addForeignKey(Service service, String collectionName, String columnName, String referenceCollection,
-                             String referenceColumn) throws DaoException, DatabaseException {
+                             String referenceColumn) throws DaoException {
         dropForeignKey(service, collectionName, columnName);
         final String sql = addForeignKeySQL(collectionName, columnName, referenceCollection, referenceColumn);
         execute(service, sql);
@@ -583,7 +588,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
 
     @Override
     public void createCollection(Service service, Class<?> objectClass)
-            throws DaoException, DatabaseException {
+            throws DaoException {
         final String collectionName = ObjectUtils.getCollectionName(objectClass);
         final String createSql = createCollectionSQL(collectionName);
         final Field[] fields = ObjectUtils.getDeclaredFields(objectClass);
@@ -663,8 +668,8 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     }
 
     public String getPassword() {
-        if (password == null)
-            GeneralLog.println("You are using the database without a password", GeneralLog.WARNING_COLOR);
+        if (password == null || password.isEmpty())
+            GeneralLog.printWarning("You are using the database without a password");
         return password;
     }
 

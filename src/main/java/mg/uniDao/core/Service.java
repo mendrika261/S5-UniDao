@@ -11,13 +11,13 @@ public class Service {
     private boolean closed;
     private Database database;
 
-    public Service(Database database, Object access, boolean transactional) throws DatabaseException {
+    public Service(Database database, Object access, boolean transactional) throws DaoException {
         setDatabase(database);
         setAccess(access);
         setTransactional(transactional);
     }
 
-    public Service(Database database, Object access) throws DatabaseException {
+    public Service(Database database, Object access) throws DaoException {
         new Service(database, access, true);
     }
 
@@ -28,7 +28,7 @@ public class Service {
             try {
                 getAccess().getClass().getMethod("rollback").invoke(getAccess());
             } catch (Exception ignored2) {}
-            throw new RuntimeException("Cannot commit changes! " + e.getMessage());
+            throw new DatabaseException("Cannot commit changes! " + e.getMessage());
         }
     }
 
@@ -37,7 +37,7 @@ public class Service {
             getAccess().getClass().getMethod("close").invoke(getAccess());
         } catch (Exception ignored) {}
     }
-    public void endConnection() throws DaoException {
+    public void endConnection() {
         commit();
         close();
         setClosed(true);
@@ -50,9 +50,9 @@ public class Service {
         return access;
     }
 
-    public void setAccess(Object access) throws DatabaseException {
+    public void setAccess(Object access) throws DaoException {
         if(access == null)
-            throw new DatabaseException("Cannot have access to database with the given access");
+            throw new DaoException("Cannot have access to database with the given information!");
         this.access = access;
     }
 

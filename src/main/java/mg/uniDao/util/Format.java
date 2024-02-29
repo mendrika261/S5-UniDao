@@ -2,6 +2,7 @@ package mg.uniDao.util;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import mg.uniDao.exception.DatabaseException;
 import mg.uniDao.util.gsonAdapter.LocalDateAdapter;
 import mg.uniDao.util.gsonAdapter.LocalDateTimeAdapter;
 
@@ -27,7 +28,11 @@ public class Format {
     }
 
     public static String toJson(Object object) {
-        return getMapper().toJson(object);
+        try {
+            return getMapper().toJson(object);
+        } catch (Exception e) {
+            throw new DatabaseException("Cannot convert object to json: " + object.toString() + "\n" + e.getMessage());
+        }
     }
 
     public static <T> T fromJson(String json, Class<T> classOfT) {
