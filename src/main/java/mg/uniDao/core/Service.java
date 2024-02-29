@@ -2,6 +2,7 @@ package mg.uniDao.core;
 
 import mg.uniDao.exception.DaoException;
 import mg.uniDao.exception.DatabaseException;
+import mg.uniDao.log.GeneralLog;
 
 import javax.xml.crypto.Data;
 
@@ -10,11 +11,14 @@ public class Service {
     private boolean transactional;
     private boolean closed;
     private Database database;
+    static int NB_CONNECTION;
 
     public Service(Database database, Object access, boolean transactional) throws DaoException {
         setDatabase(database);
         setAccess(access);
         setTransactional(transactional);
+        NB_CONNECTION++;
+        GeneralLog.printWarning(NB_CONNECTION + " connection(s) opened");
     }
 
     public Service(Database database, Object access) throws DaoException {
@@ -41,6 +45,8 @@ public class Service {
         commit();
         close();
         setClosed(true);
+        NB_CONNECTION--;
+        GeneralLog.printWarning(NB_CONNECTION + " connection(s) opened");
     }
 
     public Object getAccess() throws DaoException {

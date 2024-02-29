@@ -3,6 +3,7 @@ package mg.uniDao.core.sql;
 import mg.uniDao.annotation.AutoSequence;
 import mg.uniDao.annotation.Collection;
 import mg.uniDao.annotation.Reference;
+import mg.uniDao.core.Database;
 import mg.uniDao.core.Service;
 import mg.uniDao.exception.DaoException;
 import mg.uniDao.exception.DatabaseException;
@@ -25,7 +26,6 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     private String url = Config.DOTENV.get("DB_URL");
     private String username = Config.DOTENV.get("DB_USERNAME");
     private String password = Config.DOTENV.get("DB_PASSWORD");
-
     private static final String COL_NAME_SEPARATOR = ".";
 
     public GenericSqlDatabase() {
@@ -51,12 +51,12 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         loadDriver();
         final Connection connection;
         try {
-            connection = DriverManager.getConnection(
-                    getUrl(), getUsername(), getPassword());
+            connection = DriverManager.getConnection(getUrl(), getUsername(), getPassword());
             connection.setAutoCommit(false);
         } catch (SQLException e) {
             throw new DaoException("Credentials are not correct");
         }
+
         return new Service(this, connection, transaction);
     }
 

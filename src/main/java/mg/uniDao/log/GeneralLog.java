@@ -18,26 +18,26 @@ public class GeneralLog {
     }
 
     public static void printQuery(String query) {
-        print("[" + LocalDateTime.now() + "] ", WARNING_COLOR);
+        print("[" + LocalDateTime.now() + "] ", WHITE_COLOR);
         print("QUERY: ", INFO_COLOR);
-        println(query, WHITE_COLOR);
+        println(query, RESET_COLOR);
     }
 
     public static void printError(String message) {
-        print("[" + LocalDateTime.now() + "] ", WARNING_COLOR);
+        print("[" + LocalDateTime.now() + "] ", WHITE_COLOR);
         print("ERROR: ", ERROR_COLOR);
-        println(message, WHITE_COLOR);
+        println(message, RESET_COLOR);
     }
 
     public static void printWarning(String message) {
-        print("[" + LocalDateTime.now() + "] ", WARNING_COLOR);
+        print("[" + LocalDateTime.now() + "] ", WHITE_COLOR);
         print("WARNING: ", WARNING_COLOR);
-        println(message, WHITE_COLOR);
+        println(message, RESET_COLOR);
     }
 
     public static void printInfo(String message) {
-        print("[" + LocalDateTime.now() + "] ", WARNING_COLOR);
+        print("[" + LocalDateTime.now() + "] ", WHITE_COLOR);
         print("INFO: ", INFO_COLOR);
-        println(message, WHITE_COLOR);
+        println(message, RESET_COLOR);
     }
 }

@@ -18,14 +18,12 @@ public class DatabaseTest {
 
     @Test
     void testPostgresSqlConnect() throws DaoException {
-        /*Database postgresSql = new PostgresSql();
+        Database postgresSql = new PostgresSql();
 
         Service service = postgresSql.connect(false);
         assertNotNull(service.getAccess(), "PostgresSql connect() failed");
 
-        service.endConnection();*/
-
-        throw new DaoException("test");
+        service.endConnection();
     }
 
     @Test
