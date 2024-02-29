@@ -104,6 +104,88 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         execute(service, query, new HashMap<>());
     }
 
+    @Override
+    public <T> T query(Service service, Class<?> className, String query) throws DaoException {
+        final Connection connection = (Connection) service.getAccess();
+
+        try {
+            final PreparedStatement preparedStatement = connection.prepareStatement(query);
+
+            GeneralLog.printQuery(preparedStatement.toString());
+            final ResultSet resultSet = preparedStatement.executeQuery();
+
+            T object = null;
+            if(resultSet.next())
+                object = resultSetToObject(resultSet, (Class<T>) className, "");
+
+            resultSet.close();
+            preparedStatement.close();
+
+            return object;
+        } catch (SQLException | NoSuchMethodException | InstantiationException | IllegalAccessException |
+                 InvocationTargetException e) {
+            service.endConnection();
+            throw new DaoException(e.getMessage());
+        }
+    }
+
+    @Override
+    public <T> List<T> queryList(Service service, Class<T> className, String query, int page, int limit) throws DaoException {
+        final Connection connection = (Connection) service.getAccess();
+        final List<T> objects = new ArrayList<T>();
+
+        try {
+            final PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, limit);
+            preparedStatement.setInt(2, (page - 1) * limit);
+
+            GeneralLog.printQuery(preparedStatement.toString());
+            final ResultSet resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next()) {
+                final T object = resultSetToObject(resultSet, className, "");
+                objects.add(object);
+            }
+
+            resultSet.close();
+            preparedStatement.close();
+
+            return objects;
+        } catch (SQLException | NoSuchMethodException | InstantiationException | IllegalAccessException |
+                 InvocationTargetException e) {
+            service.endConnection();
+            throw new DaoException(e.getMessage());
+        }
+    }
+
+    @Override
+    public <T> List<T> queryList(Service service, Class<T> className, String query) throws DaoException {
+        final Connection connection = (Connection) service.getAccess();
+        final List<T> objects = new ArrayList<T>();
+
+        try {
+            final PreparedStatement preparedStatement = connection.prepareStatement(query);
+
+            GeneralLog.printQuery(preparedStatement.toString());
+            final ResultSet resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next()) {
+                final T object = resultSetToObject(resultSet, className, "");
+                objects.add(object);
+            }
+
+            resultSet.close();
+            preparedStatement.close();
+
+            return objects;
+        } catch (SQLException | NoSuchMethodException | InstantiationException | IllegalAccessException |
+                 InvocationTargetException e) {
+            service.endConnection();
+            throw new DaoException(e.getMessage());
+        }
+    }
+
+
     protected abstract String createSQL(String collectionName, HashMap<Field, Object> attributes);
 
     @Override

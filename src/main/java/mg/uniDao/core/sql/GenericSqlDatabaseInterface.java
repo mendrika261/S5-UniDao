@@ -17,7 +17,6 @@ public interface GenericSqlDatabaseInterface extends Database {
             throws IllegalAccessException, InvocationTargetException, SQLException;
 
     void execute(Service service, String query, HashMap<Field, Object> parameters) throws DaoException;
-    void execute(Service service, String query) throws DaoException;
 
     String getNextSequenceValue(Service service, String sequenceName) throws DaoException;
     void dropCollection(Service service, String collectionName) throws DaoException;
