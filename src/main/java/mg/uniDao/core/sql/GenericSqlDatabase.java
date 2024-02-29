@@ -132,11 +132,11 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     }
 
     @Override
-    public void createOrUpdate(Service service, Object object) throws DaoException {
-        if(exists(service, object))
-            update(service, object, "");
+    public void createOrUpdate(Service service, Object newObject) throws DaoException {
+        if(exists(service, newObject))
+            updateById(service, newObject, ObjectUtils.getId(newObject));
         else
-            create(service, object);
+            create(service, newObject);
     }
 
     private <T> T resultSetToObject(ResultSet resultSet, Class<T> className, String reference, String... join)

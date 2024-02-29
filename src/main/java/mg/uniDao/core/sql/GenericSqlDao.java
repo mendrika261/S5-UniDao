@@ -77,6 +77,10 @@ public class GenericSqlDao {
         service.getDatabase().createCollection(service, this.getClass());
     }
 
+    public void saveOrUpdate(Service service) throws DaoException {
+        service.getDatabase().createOrUpdate(service, this);
+    }
+
     @Override
     public String toString() {
         try {
