@@ -13,7 +13,7 @@ public class Student extends GenericSqlDao {
     @AutoSequence(name = "student", prefix = "ETU", length = 8)
     @Field(name = "id", isPrimaryKey = true)
     private String id;
-    @Field(name = "name")
+    @Field(name = "name", databaseMappingType = "VARCHAR")
     private String name;
     private String surname;
     private LocalDate birthdate;

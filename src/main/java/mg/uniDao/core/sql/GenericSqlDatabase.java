@@ -14,7 +14,10 @@ import mg.uniDao.util.ObjectUtils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Field;
+import java.math.BigInteger;
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -65,7 +68,14 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         return connect(true);
     }
 
-    protected abstract String getMappingType(String type);
+    protected String getMappingType(Field field) throws DaoException {
+        if(field.isAnnotationPresent(mg.uniDao.annotation.Field.class)) {
+            final String columnTypeImposed = field.getAnnotation(mg.uniDao.annotation.Field.class).databaseMappingType();
+            if(!columnTypeImposed.isEmpty())
+                return columnTypeImposed;
+        }
+        throw new DaoException("No mappings");
+    }
 
     @Override
     public void prepareStatement(PreparedStatement preparedStatement, HashMap<Field, Object> attributes) {
@@ -597,12 +607,12 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
             execute(service, createSql);
 
             for(Field field: fields) {
+                final String mappingType =  getMappingType(field);
                 final String addColumnSql = addColumnSQL(collectionName, ObjectUtils.getAnnotatedFieldName(field),
-                        field.getType().getName());
+                       mappingType);
                 execute(service, addColumnSql);
 
-                alterColumnType(service, collectionName, ObjectUtils.getAnnotatedFieldName(field),
-                        field.getType().getName());
+                alterColumnType(service, collectionName, ObjectUtils.getAnnotatedFieldName(field), mappingType);
 
                 if(field.isAnnotationPresent(mg.uniDao.annotation.Field.class)) {
                     mg.uniDao.annotation.Field annotation = field.getAnnotation(mg.uniDao.annotation.Field.class);

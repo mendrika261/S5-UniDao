@@ -2,9 +2,13 @@ package mg.uniDao.provider;
 
 import mg.uniDao.core.sql.GenericSqlDatabase;
 import mg.uniDao.core.sql.Joiner;
+import mg.uniDao.exception.DaoException;
 import mg.uniDao.util.ObjectUtils;
 
 import java.lang.reflect.Field;
+import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 
@@ -103,22 +107,26 @@ public class PostgresSql extends GenericSqlDatabase {
     }
 
     @Override
-    protected String getMappingType(String type) {
-        return switch (type) {
-            case "java.lang.Integer", "int" -> "INT";
-            case "java.lang.Double", "double" -> "DOUBLE PRECISION";
-            case "java.time.LocalDate" -> "DATE";
-            case "java.time.LocalDateTime" -> "TIMESTAMP";
-            case "java.lang.Boolean" -> "BOOLEAN";
-            case "java.math.BigInteger", "java.lang.Long" -> "BIGINT";
-            case "java.math.BigDecimal" -> "DECIMAL";
-            case "java.util.UUID" -> "UUID";
-            case "java.time.LocalTime" -> "TIME";
-            case "java.lang.Float" -> "FLOAT";
-            case "java.lang.Short", "java.lang.Byte" -> "SMALLINT";
-            case "java.lang.Character" -> "CHAR";
-            default -> "TEXT";
-        };
+    protected String getMappingType(Field field) throws DaoException {
+        final HashMap<Class<?>, String> mappings = new HashMap<>();
+        mappings.put(String.class, "TEXT");
+        mappings.put(Integer.class, "INT");
+        mappings.put(int.class, "INT");
+        mappings.put(Double.class, "DOUBLE PRECISION");
+        mappings.put(double.class, "DOUBLE PRECISION");
+        mappings.put(LocalDate.class, "DATE");
+        mappings.put(LocalDateTime.class, "TIMESTAMP");
+        mappings.put(Boolean.class, "BOOLEAN");
+        mappings.put(BigInteger.class, "BIGINT");
+        mappings.put(float.class, "FLOAT");
+        mappings.put(Float.class, "FLOAT");
+        // mappings.put(BigDecimal.class, "DECIMAL");
+        // mappings.put(LocalTime.class, "TIME");
+        try {
+            return super.getMappingType(field);
+        } catch (DaoException e) {
+            return mappings.getOrDefault(field.getType(), "TEXT");
+        }
     }
 
 
@@ -130,7 +138,7 @@ public class PostgresSql extends GenericSqlDatabase {
     @Override
     protected String addColumnSQL(String collectionName, String columnName, String columnType) {
         return "ALTER TABLE \"" + collectionName + "\" ADD COLUMN IF NOT EXISTS \"" + columnName + "\" "
-                + getMappingType(columnType);
+                + columnType;
     }
 
     @Override
@@ -165,7 +173,7 @@ public class PostgresSql extends GenericSqlDatabase {
     @Override
     protected String alterColumnTypeSQL(String collectionName, String columnName, String columnType) {
         return "ALTER TABLE \"" + collectionName + "\" ALTER COLUMN \"" + columnName + "\" TYPE "
-                + getMappingType(columnType) + " USING \"" + columnName + "\"::" + getMappingType(columnType);
+                + columnType + " USING \"" + columnName + "\"::" + columnType;
     }
 
     @Override

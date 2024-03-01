@@ -12,4 +12,5 @@ public @interface Field {
     boolean isPrimaryKey() default false;
     boolean isNullable() default true;
     boolean isUnique() default false;
+    String databaseMappingType() default "";
 }
