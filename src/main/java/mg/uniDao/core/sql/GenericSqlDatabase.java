@@ -3,7 +3,6 @@ package mg.uniDao.core.sql;
 import mg.uniDao.annotation.AutoSequence;
 import mg.uniDao.annotation.Collection;
 import mg.uniDao.annotation.Reference;
-import mg.uniDao.core.Database;
 import mg.uniDao.core.Service;
 import mg.uniDao.exception.DaoException;
 import mg.uniDao.exception.DatabaseException;
@@ -14,10 +13,7 @@ import mg.uniDao.util.ObjectUtils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Field;
-import java.math.BigInteger;
 import java.sql.*;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -97,13 +93,19 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     @Override
     public void execute(Service service, String query, HashMap<Field, Object> parameters) throws DaoException {
         final Connection connection = (Connection) service.getAccess();
+        final PreparedStatement preparedStatement;
+        final long startTime = System.currentTimeMillis();
+        int resultSize = 0;
         try {
-            final PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement = connection.prepareStatement(query);
             prepareStatement(preparedStatement, parameters);
 
             GeneralLog.printQuery(preparedStatement.toString());
-            preparedStatement.executeUpdate();
+            resultSize = preparedStatement.executeUpdate();
             preparedStatement.close();
+
+            final long duration = System.currentTimeMillis() - startTime;
+            GeneralLog.printInfo("Executed in " + duration + "ms, changing " + resultSize + " row(s)");
             if (!service.isTransactional())
                 service.endConnection();
         } catch (SQLException e) {

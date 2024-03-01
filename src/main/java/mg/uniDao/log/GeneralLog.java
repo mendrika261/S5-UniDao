@@ -7,6 +7,7 @@ public class GeneralLog {
     public static final String ERROR_COLOR = "\u001B[31m";
     public static final String WARNING_COLOR = "\u001B[33m";
     public static final String WHITE_COLOR = "\u001B[37m";
+    public static final String SECONDARY_COLOR = "\u001B[36m";
     public static final String RESET_COLOR = "\u001B[0m";
 
     public static void print(String message, String color) {
@@ -37,7 +38,7 @@ public class GeneralLog {
 
     public static void printInfo(String message) {
         print("[" + LocalDateTime.now() + "] ", WHITE_COLOR);
-        print("INFO: ", INFO_COLOR);
+        print("INFO: ", SECONDARY_COLOR);
         println(message, RESET_COLOR);
     }
 }

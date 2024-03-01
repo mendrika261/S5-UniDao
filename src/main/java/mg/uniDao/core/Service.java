@@ -5,12 +5,14 @@ import mg.uniDao.exception.DatabaseException;
 import mg.uniDao.log.GeneralLog;
 
 import javax.xml.crypto.Data;
+import java.time.Instant;
 
 public class Service {
     private Object access;
     private boolean transactional;
     private boolean closed;
     private Database database;
+    private final long creationTime = System.currentTimeMillis();
     static int NB_CONNECTION;
 
     public Service(Database database, Object access, boolean transactional) throws DaoException {
@@ -18,7 +20,7 @@ public class Service {
         setAccess(access);
         setTransactional(transactional);
         NB_CONNECTION++;
-        GeneralLog.printWarning(NB_CONNECTION + " connection(s) opened");
+        GeneralLog.printInfo(NB_CONNECTION + " connection(s) opened");
     }
 
     public Service(Database database, Object access) throws DaoException {
@@ -46,7 +48,9 @@ public class Service {
         close();
         setClosed(true);
         NB_CONNECTION--;
-        GeneralLog.printWarning(NB_CONNECTION + " connection(s) opened");
+        final long lifeDuration = System.currentTimeMillis() - creationTime;
+        GeneralLog.printInfo("1 connection closed after " + lifeDuration + "ms, " +
+                NB_CONNECTION + " connection(s) opened");
     }
 
     public Object getAccess() throws DaoException {
