@@ -255,8 +255,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
                 if(join != null && join.length > 0 &&
                         Arrays.stream(join).anyMatch(joiner ->
                                 joiner.equalsIgnoreCase(finalReference + field.getName()))) {
-                    final Reference referenceAnnotation = field.getAnnotation(Reference.class);
-                    final Class<?> referenceClass = referenceAnnotation.collection();
+                    final Class<?> referenceClass = field.getType();
                     final String referencePrefix = reference + ObjectUtils.getCollectionName(referenceClass);
                     final Object referenceObject = resultSetToObject(resultSet, referenceClass, referencePrefix);
                     ObjectUtils.setFieldValue(object, field, referenceObject);
@@ -290,9 +289,9 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
             final String insideJoinField = joinParts[joinParts.length - 1];
             final Field field = ObjectUtils.getDeclaredField(className, insideJoinField);
             final Reference reference = field.getAnnotation(Reference.class);
-            final String outsideJoinCollection = ObjectUtils.getCollectionName(reference.collection());
+            final String outsideJoinCollection = ObjectUtils.getCollectionName(field.getType());
             final String outsideJoinFieldOrCondition = reference.field();
-            final List<String> columns = ObjectUtils.getColumnNamesWithChildren(reference.collection(), "");
+            final List<String> columns = ObjectUtils.getColumnNamesWithChildren(field.getType(), "");
 
             final Joiner joiner = new Joiner(ObjectUtils.getAnnotatedFieldName(field),
                     outsideJoinCollection,
@@ -637,11 +636,12 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
 
                 if(field.isAnnotationPresent(Reference.class)) {
                     Reference annotation = field.getAnnotation(Reference.class);
-                    Collection referenceCollection = annotation.collection().getAnnotation(Collection.class);
+                    Collection referenceCollection = field.getType().getAnnotation(Collection.class);
                     if(referenceCollection == null)
-                        throw new DaoException("Reference collection is not a collection (annotate with @Collection)");
+                        throw new DaoException("Referenced type " + field.getType() +
+                                " is not a collection (annotate with @Collection)");
                     addForeignKey(service, collectionName, ObjectUtils.getAnnotatedFieldName(field),
-                            ObjectUtils.getCollectionName(annotation.collection()),
+                            ObjectUtils.getCollectionName(field.getType()),
                             annotation.field());
                 }
             }

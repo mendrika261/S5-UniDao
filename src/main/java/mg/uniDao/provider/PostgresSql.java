@@ -109,7 +109,7 @@ public class PostgresSql extends GenericSqlDatabase {
     @Override
     protected String getMappingType(Field field) throws DaoException {
         final HashMap<Class<?>, String> mappings = new HashMap<>();
-        mappings.put(String.class, "TET");
+        mappings.put(String.class, "TEXT");
         mappings.put(Integer.class, "INT");
         mappings.put(int.class, "INT");
         mappings.put(Double.class, "DOUBLE PRECISION");

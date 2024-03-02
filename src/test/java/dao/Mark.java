@@ -12,7 +12,7 @@ public class Mark extends GenericSqlDao {
     @AutoSequence(name = "mark")
     String id;
     @Field(name = "student_id")
-    @Reference(collection=Student.class)
+    @Reference
     Student student;
     Double value;
     int coefficient;
