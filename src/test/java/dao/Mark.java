@@ -7,12 +7,12 @@ import mg.uniDao.annotation.Reference;
 import mg.uniDao.core.sql.GenericSqlDao;
 
 @Collection(name = "mark")
-public class Mark extends GenericSqlDao {
+public class Mark extends GenericSqlDao<Mark> {
     @Field(name = "id", isPrimaryKey = true)
     @AutoSequence(name = "mark")
     String id;
     @Field(name = "student_id")
-    @Reference
+    @Reference(field = "id")
     Student student;
     Double value;
     int coefficient;

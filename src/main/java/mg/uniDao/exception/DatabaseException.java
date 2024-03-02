@@ -2,6 +2,9 @@ package mg.uniDao.exception;
 
 import mg.uniDao.log.GeneralLog;
 
+/**
+ * DatabaseException is thrown when an error occurs during the execution of a database operation
+ */
 public class DatabaseException extends RuntimeException {
     private String personalizedMessage;
     public DatabaseException(String message) {

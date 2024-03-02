@@ -2,6 +2,9 @@ package mg.uniDao.exception;
 
 import mg.uniDao.log.GeneralLog;
 
+/**
+ * DaoException is thrown when an error occurs during the execution of a dao operation
+ */
 public class DaoException extends Exception {
     private String personalizedMessage;
     public DaoException(String message) {
