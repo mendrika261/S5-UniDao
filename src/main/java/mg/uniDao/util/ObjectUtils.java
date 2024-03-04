@@ -174,7 +174,8 @@ public class ObjectUtils {
             }
         }
         if (primaryKeys.isEmpty())
-            throw new DaoException("No primary key found in " + objectClass.getName());
+            throw new DaoException("No primary key found in " + objectClass.getName() + ", " +
+                    "use @Link instead of @Collection if it is a linking collection");
         return primaryKeys;
     }
 
@@ -189,7 +190,8 @@ public class ObjectUtils {
             }
         }
         if (primaryKeys.isEmpty())
-            throw new DaoException("No primary key found in " + object.getClass().getName());
+            throw new DaoException("No primary key found in " + object.getClass().getName() + ", " +
+                    "use @Link instead of @Collection if it is a linking collection");
         return primaryKeys;
     }
 
@@ -225,11 +227,12 @@ public class ObjectUtils {
 
     public static String getCollectionName(Class<?> objectClass) throws DaoException {
         if (!objectClass.isAnnotationPresent(mg.uniDao.annotation.Collection.class))
-            throw new DaoException(objectClass.getSimpleName() + " is not a collection, " +
-                    "it should be annotated with @Collection to inherit methods.");
+            return objectClass.getSimpleName();
+            /*throw new DaoException(objectClass.getSimpleName() + " is not a collection, " +
+                    "it should be annotated with @Collection to inherit methods.");*/
         if (!objectClass.getAnnotation(mg.uniDao.annotation.Collection.class).name().isEmpty())
             return objectClass.getAnnotation(Collection.class).name();
-        return objectClass.getSimpleName().toLowerCase();
+        return objectClass.getSimpleName();
     }
 
     public static void fillPrimaryKeys(Object condition, Object object) {

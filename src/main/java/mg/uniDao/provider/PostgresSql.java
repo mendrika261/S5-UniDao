@@ -144,14 +144,14 @@ public class PostgresSql extends GenericSqlDatabase {
     @Override
     protected String addForeignKeySQL(String collectionName, String columnName, String referenceCollection,
                                       String referenceColumn) {
-        return "ALTER TABLE \"" + collectionName + "\" ADD CONSTRAINT " + collectionName + "_" + columnName + "_fkey "
-                + "FOREIGN KEY (" + columnName + ") REFERENCES \"" + referenceCollection + "\" (\"" + referenceColumn + "\")";
+        return "ALTER TABLE \"" + collectionName + "\" ADD CONSTRAINT \"" + collectionName + "_" + columnName + "_fkey\" "
+                + "FOREIGN KEY (\"" + columnName + "\") REFERENCES \"" + referenceCollection + "\" (\"" + referenceColumn + "\")";
     }
 
     @Override
     protected String dropForeignKeySQL(String collectionName, String columnName) {
-        return "ALTER TABLE \"" + collectionName + "\" DROP CONSTRAINT IF EXISTS " + collectionName + "_"
-                + columnName + "_fkey CASCADE";
+        return "ALTER TABLE \"" + collectionName + "\" DROP CONSTRAINT IF EXISTS \"" + collectionName + "_"
+                + columnName + "_fkey\" CASCADE";
     }
 
     @Override

@@ -7,7 +7,7 @@ import mg.uniDao.annotation.Reference;
 import mg.uniDao.core.sql.GenericSqlDao;
 
 @Collection(name = "mark")
-public class Mark extends GenericSqlDao<Mark> {
+public class Mark extends GenericSqlDao {
     @Field(name = "id", isPrimaryKey = true)
     @AutoSequence(name = "mark")
     String id;

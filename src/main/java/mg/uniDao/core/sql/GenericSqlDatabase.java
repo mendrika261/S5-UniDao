@@ -2,6 +2,7 @@ package mg.uniDao.core.sql;
 
 import mg.uniDao.annotation.AutoSequence;
 import mg.uniDao.annotation.Collection;
+import mg.uniDao.annotation.Link;
 import mg.uniDao.annotation.Reference;
 import mg.uniDao.core.Service;
 import mg.uniDao.exception.DaoException;
@@ -646,7 +647,9 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
                 }
             }
 
-            addPrimaryKey(service, collectionName, ObjectUtils.getPrimaryKeys(objectClass).values().stream().toList());
+            if(!objectClass.isAnnotationPresent(Link.class))
+                addPrimaryKey(service, collectionName,
+                        ObjectUtils.getPrimaryKeys(objectClass).values().stream().toList());
 
             if(objectClass.isAnnotationPresent(Collection.class)) {
                 Collection annotation = objectClass.getAnnotation(Collection.class);
