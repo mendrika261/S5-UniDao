@@ -161,13 +161,13 @@ public class PostgresSql extends GenericSqlDatabase {
 
     @Override
     protected String addPrimaryKeySQL(String collectionName, List<String> primaryKeyColumns) {
-        return "ALTER TABLE \"" + collectionName + "\" ADD PRIMARY KEY (" + String.join(", ",
-                primaryKeyColumns)+ ")";
+        return "ALTER TABLE \"" + collectionName + "\" ADD PRIMARY KEY (\"" + String.join("\", \"",
+                primaryKeyColumns)+ "\")";
     }
 
     @Override
     protected  String dropPrimaryKeySQL(String collectionName) {
-        return "ALTER TABLE \"" + collectionName + "\" DROP CONSTRAINT IF EXISTS " + collectionName + "_pkey CASCADE";
+        return "ALTER TABLE \"" + collectionName + "\" DROP CONSTRAINT IF EXISTS \"" + collectionName + "_pkey\" CASCADE";
     }
 
     @Override
@@ -189,23 +189,23 @@ public class PostgresSql extends GenericSqlDatabase {
 
     @Override
     protected String addColumnUniqueSQL(String collectionName, String columnName) {
-        return "ALTER TABLE \"" + collectionName + "\" ADD UNIQUE (" + columnName + ")";
+        return "ALTER TABLE \"" + collectionName + "\" ADD UNIQUE (\"" + columnName + "\")";
     }
 
     @Override
     protected String dropColumnUniqueSQL(String collectionName, String columnName) {
-        return "ALTER TABLE \"" + collectionName + "\" DROP CONSTRAINT IF EXISTS " + collectionName + "_"
-                + columnName + "_key CASCADE";
+        return "ALTER TABLE \"" + collectionName + "\" DROP CONSTRAINT IF EXISTS \"" + collectionName + "_"
+                + columnName + "_key\" CASCADE";
     }
 
     @Override
     protected String addUniqueSQL(String collectionName, String[] columnName) {
-        return "ALTER TABLE \"" + collectionName + "\" ADD CONSTRAINT " + collectionName +
-                "_unique UNIQUE (" + String.join(", ", columnName) + ")";
+        return "ALTER TABLE \"" + collectionName + "\" ADD CONSTRAINT \"" + collectionName +
+                "_unique\" UNIQUE (\"" + String.join("\", \"", columnName) + "\")";
     }
 
     @Override
     protected String dropUniqueSQL(String collectionName) {
-        return "ALTER TABLE \"" + collectionName + "\" DROP CONSTRAINT IF EXISTS " + collectionName + "_unique CASCADE";
+        return "ALTER TABLE \"" + collectionName + "\" DROP CONSTRAINT IF EXISTS \"" + collectionName + "_unique\" CASCADE";
     }
 }

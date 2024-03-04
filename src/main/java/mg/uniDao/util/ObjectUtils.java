@@ -99,8 +99,8 @@ public class ObjectUtils {
     public static String getAnnotatedFieldName(Field field) {
         if(field.isAnnotationPresent(mg.uniDao.annotation.Field.class)
                 && !field.getAnnotation(mg.uniDao.annotation.Field.class).name().isEmpty())
-            return field.getAnnotation(mg.uniDao.annotation.Field.class).name();
-        return field.getName();
+            return Format.toSnakeCase(field.getAnnotation(mg.uniDao.annotation.Field.class).name());
+        return Format.toSnakeCase(field.getName());
     }
 
     public static HashMap<Field, Object> getFieldsAnnotatedNameWithValues(Object object) throws DaoException {
@@ -226,13 +226,10 @@ public class ObjectUtils {
     }
 
     public static String getCollectionName(Class<?> objectClass) throws DaoException {
-        if (!objectClass.isAnnotationPresent(mg.uniDao.annotation.Collection.class))
-            return objectClass.getSimpleName();
-            /*throw new DaoException(objectClass.getSimpleName() + " is not a collection, " +
-                    "it should be annotated with @Collection to inherit methods.");*/
-        if (!objectClass.getAnnotation(mg.uniDao.annotation.Collection.class).name().isEmpty())
-            return objectClass.getAnnotation(Collection.class).name();
-        return objectClass.getSimpleName();
+        if (objectClass.isAnnotationPresent(mg.uniDao.annotation.Collection.class) &&
+                !objectClass.getAnnotation(mg.uniDao.annotation.Collection.class).name().isEmpty())
+            return Format.toSnakeCase(objectClass.getAnnotation(Collection.class).name());
+        return Format.toSnakeCase(objectClass.getSimpleName());
     }
 
     public static void fillPrimaryKeys(Object condition, Object object) {
