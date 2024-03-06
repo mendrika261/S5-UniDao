@@ -13,6 +13,13 @@ import java.util.HashMap;
 import java.util.List;
 
 public class PostgresSql extends GenericSqlDatabase {
+    @Override
+    public String getDriver(String configName) {
+        String driver = super.getDriver(configName);
+        if(driver == null || driver.isEmpty())
+            return "org.postgresql.Driver";
+        return driver;
+    }
 
     @Override
     protected String createSQL(String collectionName, HashMap<Field, Object> attributes) {

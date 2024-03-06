@@ -23,4 +23,9 @@ public @interface Collection {
      * @return The fields that are unique in the collection
      */
     String[] uniqueFields() default {};
+
+    /**
+     * @return The database config name in environnement
+     */
+    String database() default "";
 }

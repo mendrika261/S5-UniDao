@@ -21,43 +21,52 @@ import java.util.HashMap;
 import java.util.List;
 
 public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface {
-    private static final String DRIVER = Config.DOTENV.get("DB_DRIVER");
-    private static boolean DRIVER_LOADED = false;
-    private String url = Config.DOTENV.get("DB_URL");
-    private String username = Config.DOTENV.get("DB_USERNAME");
-    private String password = Config.DOTENV.get("DB_PASSWORD");
-    private static final String COL_NAME_SEPARATOR = ".";
+    private final String COL_NAME_SEPARATOR = ".";
+    private boolean DRIVER_LOADED = false;
 
     public GenericSqlDatabase() {
     }
 
 
     @Override
-    public void loadDriver() throws DaoException {
+    public void loadDriver(String configName) throws DaoException {
         if(!DRIVER_LOADED) {
-            if(DRIVER == null)
-                throw new DaoException("Driver is not set in the .env file");
+            if(getDriver(configName) == null)
+                throw new DaoException("Driver for " + configName + " must be set in the .env file");
             try {
-                Class.forName(DRIVER);
+                Class.forName(getDriver(configName));
+                GeneralLog.printInfo("Loaded driver: " + getDriver(configName));
             } catch (ClassNotFoundException e) {
-                throw new DaoException("Cannot find the driver: " + DRIVER);
+                throw new DaoException("Cannot find the driver: " + getDriver(configName));
             }
             DRIVER_LOADED = true;
         }
     }
 
     @Override
-    public Service connect(boolean transaction) throws DaoException {
-        loadDriver();
+    public Service connect(String configName, boolean transaction) throws DaoException {
+        loadDriver(configName);
         final Connection connection;
         try {
-            connection = DriverManager.getConnection(getUrl(), getUsername(), getPassword());
+            connection = DriverManager.getConnection(getUrl(configName), getUsername(configName),
+                    getPassword(configName));
             connection.setAutoCommit(false);
         } catch (SQLException e) {
             throw new DaoException("Credentials are not correct");
         }
 
         return new Service(this, connection, transaction);
+    }
+
+    @Override
+    public Service connect(String configName) throws DaoException {
+        return connect(configName, true);
+    }
+
+    @Override
+    public Service connect(boolean transaction) throws DaoException {
+        String defaultDb = Config.DOTENV.get("DB_DEFAULT", "");
+        return connect(defaultDb, transaction);
     }
 
     @Override
@@ -662,33 +671,20 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         }
     }
 
-    public String getUrl() throws DaoException {
-        if (url == null)
-            throw new DaoException("Database url is not set in the .env file");
-        return url;
+    public String getUrl(String configName) {
+        return Config.DOTENV.get("DB_" + configName + "_URL");
     }
 
-    public void setUrl(String url) throws DaoException {
-        this.url = url;
+
+    public String getUsername(String configName) {
+        return Config.DOTENV.get("DB_" + configName + "_USERNAME");
     }
 
-    public String getUsername() throws DaoException {
-        if (username == null)
-            throw new DaoException("Database username is not set in the .env file");
-        return username;
+    public String getPassword(String configName) {
+        return Config.DOTENV.get("DB_" + configName + "_PASSWORD");
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        if (password == null || password.isEmpty())
-            GeneralLog.printWarning("You are using the database without a password");
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
+    public String getDriver(String configName) {
+        return Config.DOTENV.get("DB_" + configName + "_DRIVER");
     }
 }

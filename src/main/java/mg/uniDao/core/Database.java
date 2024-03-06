@@ -15,7 +15,7 @@ public interface Database {
       * @throws DaoException if the driver loading fails
       *
       */
-     void loadDriver() throws DaoException;
+     void loadDriver(String configName) throws DaoException;
 
      /**
       * Connects to the database.
@@ -24,7 +24,7 @@ public interface Database {
       * @return a {@link Service}
       * @throws DaoException if the connection fails
       */
-     Service connect(boolean transaction) throws DaoException;
+     Service connect( String configName, boolean transaction) throws DaoException;
 
      /**
       * Connects to the database, transaction is true by default.
@@ -32,6 +32,8 @@ public interface Database {
       * @return a {@link Service}
       * @throws DaoException if the connection fails
       */
+     Service connect(String configName) throws DaoException;
+     Service connect(boolean transaction) throws DaoException;
      Service connect() throws DaoException;
 
      /**
