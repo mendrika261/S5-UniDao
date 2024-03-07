@@ -27,5 +27,5 @@ public @interface Collection {
     /**
      * @return The database config name in environnement
      */
-    String database() default "";
+    boolean historize() default false;
 }

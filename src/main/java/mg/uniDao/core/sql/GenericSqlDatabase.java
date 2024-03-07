@@ -15,6 +15,7 @@ import mg.uniDao.util.ObjectUtils;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Field;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -22,6 +23,12 @@ import java.util.List;
 
 public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface {
     private final String COL_NAME_SEPARATOR = ".";
+    public final int ACTION_DELETE = -10;
+    public final int ACTION_CREATE = 0;
+    public final int ACTION_UPDATE = 10;
+    public final String ACTION_COLUMN_NAME = "unidao_action";
+    public final String ACTION_DATE_COLUMN_NAME = "unidao_action_date";
+
     private boolean DRIVER_LOADED = false;
 
     public GenericSqlDatabase() {
@@ -80,6 +87,10 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
             if(!columnTypeImposed.isEmpty())
                 return columnTypeImposed;
         }
+        return getMappingType(field.getType());
+    }
+
+    protected String getMappingType(Class<?> className) throws DaoException {
         throw new DaoException("No mappings");
     }
 
@@ -218,6 +229,13 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         ObjectUtils.fillAutoSequence(service, object);
         final HashMap<Field, Object> attributes = ObjectUtils.getFieldsAnnotatedNameWithValues(object);
         final String sql = createSQL(ObjectUtils.getCollectionName(object.getClass()), attributes);
+
+
+        if(ObjectUtils.isToHistorize(object)) {
+            attributes.put(ACTION_COLUMN_NAME, ACTION_CREATE);
+            attributes.put(ACTION_DATE_COLUMN_NAME, LocalDateTime.now());
+        }
+
         execute(service, sql, attributes);
     }
 
@@ -588,6 +606,14 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     protected abstract String addColumnSQL(String collectionName, String columnName, String columnType)
             throws DatabaseException;
 
+    protected void addColumn(Service service, String collectionName, String fieldName, String mappingType)
+            throws DatabaseException, DaoException {
+        final String addColumnSql = addColumnSQL(collectionName, fieldName, mappingType);
+        execute(service, addColumnSql);
+        alterColumnType(service, collectionName, fieldName, mappingType);
+    }
+
+
     protected abstract String addForeignKeySQL(String collectionName, String columnName, String referenceCollection,
                                               String referenceColumn) throws DatabaseException;
 
@@ -618,21 +644,15 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
             execute(service, createSql);
 
             for(Field field: fields) {
-                final String mappingType =  getMappingType(field);
-                final String addColumnSql = addColumnSQL(collectionName, ObjectUtils.getAnnotatedFieldName(field),
-                       mappingType);
-                execute(service, addColumnSql);
-
-                alterColumnType(service, collectionName, ObjectUtils.getAnnotatedFieldName(field), mappingType);
+                final String mappingType = getMappingType(field);
+                final String fieldName = ObjectUtils.getAnnotatedFieldName(field);
+                addColumn(service, collectionName, fieldName, mappingType);
 
                 if(field.isAnnotationPresent(mg.uniDao.annotation.Field.class)) {
                     mg.uniDao.annotation.Field annotation = field.getAnnotation(mg.uniDao.annotation.Field.class);
                     if(!annotation.isPrimaryKey()) {
-                        setColumnNullable(service, collectionName, ObjectUtils.getAnnotatedFieldName(field),
-                                annotation.isNullable());
-
-                        setColumnUnique(service, collectionName, ObjectUtils.getAnnotatedFieldName(field),
-                                annotation.isUnique());
+                        setColumnNullable(service, collectionName, fieldName, annotation.isNullable());
+                        setColumnUnique(service, collectionName, fieldName, annotation.isUnique());
                     }
                 }
 
@@ -650,7 +670,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
                     if(referenceCollection == null)
                         throw new DaoException("Referenced type " + field.getType() +
                                 " is not a collection (annotate with @Collection)");
-                    addForeignKey(service, collectionName, ObjectUtils.getAnnotatedFieldName(field),
+                    addForeignKey(service, collectionName, fieldName,
                             ObjectUtils.getCollectionName(field.getType()),
                             annotation.field());
                 }
@@ -663,6 +683,10 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
             if(objectClass.isAnnotationPresent(Collection.class)) {
                 Collection annotation = objectClass.getAnnotation(Collection.class);
                 setUnique(service, collectionName, annotation.uniqueFields());
+                if(annotation.historize()) {
+                    addColumn(service, collectionName, ACTION_COLUMN_NAME, getMappingType(int.class));
+                    addColumn(service, collectionName, ACTION_DATE_COLUMN_NAME, getMappingType(LocalDateTime.class));
+                }
             }
         } catch (DaoException | DatabaseException e) {
             throw e;

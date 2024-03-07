@@ -7,6 +7,7 @@ import mg.uniDao.core.Service;
 import mg.uniDao.core.sql.GenericSqlDao;
 import mg.uniDao.exception.DaoException;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -255,5 +256,13 @@ public class ObjectUtils {
             }
         }
         return null;
+    }
+
+    public static boolean isToHistorize(Object object) {
+        if(object.getClass().isAnnotationPresent(Collection.class)) {
+            Collection annotation = object.getClass().getAnnotation(Collection.class);
+            return annotation.historize();
+        }
+        return false;
     }
 }

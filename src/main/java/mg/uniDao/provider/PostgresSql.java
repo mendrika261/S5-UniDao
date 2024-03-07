@@ -114,7 +114,7 @@ public class PostgresSql extends GenericSqlDatabase {
     }
 
     @Override
-    protected String getMappingType(Field field) throws DaoException {
+    protected String getMappingType(Class<?> className) {
         final HashMap<Class<?>, String> mappings = new HashMap<>();
         mappings.put(String.class, "TEXT");
         mappings.put(Integer.class, "INT");
@@ -129,11 +129,7 @@ public class PostgresSql extends GenericSqlDatabase {
         mappings.put(Float.class, "FLOAT");
         // mappings.put(BigDecimal.class, "DECIMAL");
         // mappings.put(LocalTime.class, "TIME");
-        try {
-            return super.getMappingType(field);
-        } catch (DaoException e) {
-            return mappings.getOrDefault(field.getType(), "TEXT");
-        }
+        return mappings.getOrDefault(className, "TEXT");
     }
 
 
