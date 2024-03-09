@@ -13,10 +13,10 @@ import java.util.HashMap;
 import java.util.List;
 
 public interface GenericSqlDatabaseInterface extends Database {
-    void prepareStatement(PreparedStatement preparedStatement, HashMap<Field, Object> attributes)
+    void prepareStatement(PreparedStatement preparedStatement, HashMap<String, Object> attributes)
             throws IllegalAccessException, InvocationTargetException, SQLException;
 
-    void execute(Service service, String query, HashMap<Field, Object> parameters) throws DaoException;
+    void execute(Service service, String query, HashMap<String, Object> parameters) throws DaoException;
 
     String getNextSequenceValue(Service service, String sequenceName) throws DaoException;
     void dropCollection(Service service, String collectionName) throws DaoException;

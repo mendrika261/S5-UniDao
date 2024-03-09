@@ -166,16 +166,6 @@ public class GenericSqlDao {
     }
 
     /**
-        * Deletes the object from the database
-        * @param service the service to use
-        * @param conditionObject the conditionObject to use
-        * @throws DaoException if an error occurs during the operation
-        */
-    public void delete(Service service, Object conditionObject) throws DaoException {
-        service.getDatabase().delete(service, conditionObject);
-    }
-
-    /**
         * Creates the collection in the database
         * @param service the service to use
         * @throws DaoException if an error occurs during the operation

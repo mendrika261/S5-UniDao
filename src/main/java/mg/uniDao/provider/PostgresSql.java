@@ -22,12 +22,12 @@ public class PostgresSql extends GenericSqlDatabase {
     }
 
     @Override
-    protected String createSQL(String collectionName, HashMap<Field, Object> attributes) {
+    protected String createSQL(String collectionName, HashMap<String, Object> attributes) {
         StringBuilder columnsSQL = new StringBuilder();
         StringBuilder valuesSQL = new StringBuilder();
         if (attributes != null) {
-            for (Field attribute : attributes.keySet()) {
-                columnsSQL.append("\"").append(ObjectUtils.getAnnotatedFieldName(attribute)).append("\", ");
+            for (String column : attributes.keySet()) {
+                columnsSQL.append("\"").append(column).append("\", ");
                 valuesSQL.append("?, ");
             }
             columnsSQL.delete(columnsSQL.length() - 2, columnsSQL.length());
@@ -71,11 +71,11 @@ public class PostgresSql extends GenericSqlDatabase {
                 " WHERE " + extraCondition + " LIMIT ? OFFSET ?";
     }
 
-    private String toConditionSQL(HashMap<Field, Object> conditions) {
+    private String toConditionSQL(HashMap<String, Object> conditions) {
         StringBuilder conditionSQL = new StringBuilder();
         if(conditions != null) {
-            for (Field condition : conditions.keySet())
-                conditionSQL.append("\"").append(ObjectUtils.getAnnotatedFieldName(condition)).append("\" = ")
+            for (String column : conditions.keySet())
+                conditionSQL.append("\"").append(column).append("\" = ")
                         .append("?").append(" AND ");
             conditionSQL.delete(conditionSQL.length() - 5, conditionSQL.length());
         } else conditionSQL.append("true");
@@ -83,20 +83,19 @@ public class PostgresSql extends GenericSqlDatabase {
     }
 
     @Override
-    protected String findSQL(String collectionName, HashMap<Field, Object> conditions,
+    protected String findSQL(String collectionName, HashMap<String, Object> conditions,
                              String extraCondition, List<Joiner> joiners) {
         return "SELECT * " + joinColumnSql(joiners) + " FROM \"" + collectionName + "\"" + joinSQL(joiners) +
                 " WHERE " + toConditionSQL(conditions) + " " + extraCondition + " LIMIT 1";
     }
 
     @Override
-    protected String updateSQL(String collectionName, HashMap<Field, Object> attributes,
-                               HashMap<Field, Object> conditions, String extraCondition) {
+    protected String updateSQL(String collectionName, HashMap<String, Object> attributes,
+                               HashMap<String, Object> conditions, String extraCondition) {
         StringBuilder setSQL = new StringBuilder();
         if(attributes != null) {
-            for (Field attribute : attributes.keySet())
-                setSQL.append("\"").append(ObjectUtils.getAnnotatedFieldName(attribute))
-                        .append("\" = ").append("?").append(", ");
+            for (String column : attributes.keySet())
+                setSQL.append("\"").append(column).append("\" = ").append("?").append(", ");
             setSQL.delete(setSQL.length() - 2, setSQL.length());
         }
         return "UPDATE \"" + collectionName + "\" SET " + setSQL + " WHERE " + toConditionSQL(conditions) + " "
@@ -104,7 +103,7 @@ public class PostgresSql extends GenericSqlDatabase {
     }
 
     @Override
-    protected String deleteSQL(String collectionName, HashMap<Field, Object> conditions, String extraCondition) {
+    protected String deleteSQL(String collectionName, HashMap<String, Object> conditions, String extraCondition) {
         return "DELETE FROM \"" + collectionName + "\" WHERE " + toConditionSQL(conditions) + " " + extraCondition;
     }
 

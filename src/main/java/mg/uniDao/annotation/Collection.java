@@ -25,7 +25,7 @@ public @interface Collection {
     String[] uniqueFields() default {};
 
     /**
-     * @return The database config name in environnement
+     * @return if the collection is historized
      */
     boolean historize() default false;
 }

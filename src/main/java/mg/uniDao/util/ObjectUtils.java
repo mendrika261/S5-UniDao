@@ -104,24 +104,25 @@ public class ObjectUtils {
         return Format.toSnakeCase(field.getName());
     }
 
-    public static HashMap<Field, Object> getFieldsAnnotatedNameWithValues(Object object) throws DaoException {
-        final HashMap<Field, Object> attributes = new HashMap<>();
+    public static HashMap<String, Object> getFieldsAnnotatedNameWithValues(Object object) throws DaoException {
+        final HashMap<String, Object> attributes = new HashMap<>();
         for(final Field field: getDeclaredFields(object.getClass())) {
+            final String fieldName = getAnnotatedFieldName(field);
             if(field.isAnnotationPresent(Reference.class)) {
                 Optional<String> principalKey = ObjectUtils.getPrimaryKeys(field.getType())
                         .keySet().stream().findFirst();
                 Object fieldObject = getFieldValue(object, field);
-                attributes.put(field, getFieldValue(fieldObject, ObjectUtils.getDeclaredField(fieldObject.getClass(),
-                        principalKey.orElseThrow())));
+                attributes.put(fieldName, getFieldValue(fieldObject,
+                        ObjectUtils.getDeclaredField(fieldObject.getClass(), principalKey.orElseThrow())));
             } else
-                attributes.put(field, getFieldValue(object, field));
+                attributes.put(fieldName, getFieldValue(object, field));
         }
         return attributes;
     }
 
-    public static HashMap<Field, Object> getFieldsNotNullAnnotatedNameWithValues(Object object, boolean throwPrimitiveType)
+    public static HashMap<String, Object> getFieldsNotNullAnnotatedNameWithValues(Object object, boolean throwPrimitiveType)
             throws DaoException {
-        final HashMap<Field, Object> attributes = new HashMap<>();
+        final HashMap<String, Object> attributes = new HashMap<>();
 
         if (object == null)
             return attributes;
@@ -131,15 +132,15 @@ public class ObjectUtils {
             if(throwPrimitiveType && field.getType().isPrimitive())
                 throw new DaoException("Object condition work only with object without primitive field: \n" +
                         Arrays.toString(Arrays.stream(fields).toArray()));
-            //final String fieldName = getAnnotatedFieldName(field);
+            final String fieldName = getAnnotatedFieldName(field);
             final Object fieldValue = getFieldValue(object, field);
             if (fieldValue != null)
-                attributes.put(field, fieldValue);
+                attributes.put(fieldName, fieldValue);
         }
         return attributes;
     }
 
-    public static HashMap<Field, Object> getFieldsNotNullAnnotatedNameWithValues(Object object) throws DaoException {
+    public static HashMap<String, Object> getFieldsNotNullAnnotatedNameWithValues(Object object) throws DaoException {
         return getFieldsNotNullAnnotatedNameWithValues(object, false);
     }
 
@@ -258,11 +259,19 @@ public class ObjectUtils {
         return null;
     }
 
-    public static boolean isToHistorize(Object object) {
-        if(object.getClass().isAnnotationPresent(Collection.class)) {
-            Collection annotation = object.getClass().getAnnotation(Collection.class);
+    public static boolean isToHistorize(Class<?> className) {
+        if(className.isAnnotationPresent(Collection.class)) {
+            Collection annotation = className.getAnnotation(Collection.class);
             return annotation.historize();
         }
         return false;
+    }
+
+    public static Object newInstance(Class<?> className) throws DaoException {
+        try {
+            return className.getConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+            throw new DaoException("Can not create new instance of " + className.getName());
+        }
     }
 }

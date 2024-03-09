@@ -3,6 +3,7 @@ package mg.uniDao.core;
 import mg.uniDao.exception.DaoException;
 import mg.uniDao.exception.DatabaseException;
 
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -142,7 +143,8 @@ public interface Database {
       * @param <T> the type of the object
       * @throws DaoException if the collection finding fails
       */
-     <T> T find(Service service, Class<?> className, Object conditionObject, String condition, String... joins)
+     <T> T find(Service service, Class<?> className, Object conditionObject, HashMap<String, Object> conditions,
+                String condition, String... joins)
              throws DaoException;
 
      /**
@@ -192,7 +194,8 @@ public interface Database {
       * @param condition the condition of the object to be updated, e.g. "id = '123'"
       * @throws DaoException if the collection update fails
       */
-     void update(Service service, Object newObject, Object conditionObject, String condition)
+     void update(Service service, Object newObject, Object conditionObject,
+                 HashMap<String, Object> conditions, String condition, int action)
              throws DaoException;
 
      /**
@@ -234,7 +237,8 @@ public interface Database {
       * @param condition the condition of the object to be deleted, e.g. "id = '123'"
       * @throws DaoException if the collection deletion fails
       */
-     void delete(Service service, Class<?> className, Object conditionObject, String condition) throws DaoException;
+     void delete(Service service, Class<?> className, Object conditionObject,
+                 HashMap<String, Object> conditions, String condition) throws DaoException;
 
      /**
       * Delete an object in the database.
