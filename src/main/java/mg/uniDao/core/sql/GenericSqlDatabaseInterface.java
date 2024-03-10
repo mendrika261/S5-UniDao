@@ -35,4 +35,30 @@ public interface GenericSqlDatabaseInterface extends Database {
     void addForeignKey(Service service, String collectionName, String columnName, String referenceCollection,
                               String referenceColumn) throws DaoException, DatabaseException;
     void dropForeignKey(Service service, String collectionName, String columnName) throws DaoException;
+
+
+    String createSQL(String collectionName, HashMap<String, Object> attributes);
+    String findListWithLimitSQL(String collectionName, String extraCondition,
+                                                   List<Joiner> joiners);
+    String findSQL(String collectionName, HashMap<String, Object> conditions,
+                                      String extraCondition, List<Joiner> joiners);
+    String updateSQL(String collectionName, HashMap<String, Object> attributes,
+                     HashMap<String, Object> conditions, String extraCondition);
+    String deleteSQL(String collectionName, HashMap<String, Object> conditions, String extraCondition);
+    String getNextSequenceValueSql(String sequenceName);
+    String createCollectionSQL(String collectionName);
+    String addColumnSQL(String collectionName, String columnName, String columnType);
+    String addForeignKeySQL(String collectionName, String columnName, String referenceCollection,
+                                      String referenceColumn);
+    String dropForeignKeySQL(String collectionName, String columnName);
+    String dropCollectionSQL(String collectionName);
+    String addPrimaryKeySQL(String collectionName, List<String> primaryKeyColumns);
+    String dropPrimaryKeySQL(String collectionName);
+    String alterColumnTypeSQL(String collectionName, String columnName, String columnType);
+    String setColumnNullableSQL(String collectionName, String columnName, boolean nullable);
+    String createSequenceSQL(String sequenceName);
+    String addColumnUniqueSQL(String collectionName, String columnName);
+    String dropColumnUniqueSQL(String collectionName, String columnName);
+    String addUniqueSQL(String collectionName, String[] columnName);
+    String dropUniqueSQL(String collectionName);
 }

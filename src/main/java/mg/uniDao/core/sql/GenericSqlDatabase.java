@@ -90,7 +90,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         return getMappingType(field.getType());
     }
 
-    protected String getMappingType(Class<?> className) throws DaoException {
+    public String getMappingType(Class<?> className) throws DaoException {
         throw new DaoException("No mappings");
     }
 
@@ -221,9 +221,6 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         }
     }
 
-
-    protected abstract String createSQL(String collectionName, HashMap<String, Object> attributes);
-
     public void insert(Service service, Object object, int action) throws DaoException {
         Object actualId = ObjectUtils.getId(object);
         ObjectUtils.fillAutoSequence(service, object);
@@ -312,8 +309,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         return object;
     }
 
-    protected abstract String findListWithLimitSQL(String collectionName, String extraCondition,
-                                                   List<Joiner> joiners);
+
 
     private List<Joiner> extractJoinersFrom(Class<?> className, String... joins) throws DaoException {
         List<Joiner> joiners = new ArrayList<>();
@@ -379,9 +375,6 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         return findList(service, className, "", 1, Integer.MAX_VALUE, joins);
     }
 
-    protected abstract String findSQL(String collectionName, HashMap<String, Object> conditions,
-                                      String extraCondition, List<Joiner> joiners);
-
     @Override
     public <T> T find(Service service, Class<?> className, Object conditionObject,
                       HashMap<String, Object> conditions,
@@ -436,9 +429,6 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         return find(service, className, null, conditions, "", joins);
     }
 
-    protected abstract String updateSQL(String collectionName, HashMap<String, Object> attributes,
-                                        HashMap<String, Object> conditions, String extraCondition);
-
     @Override
     public void update(Service service, Object newObject, Object conditionObject,
                        HashMap<String, Object> conditions, String condition, int action)
@@ -479,9 +469,6 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         update(service, object, null, conditions, "", ACTION_UPDATE);
     }
 
-
-    protected abstract String deleteSQL(String collectionName, HashMap<String, Object> conditions, String extraCondition);
-
     @Override
     public void delete(Service service, Class<?> className, Object conditionObject,
                        HashMap<String, Object> conditions, String condition) throws DaoException {
@@ -516,8 +503,6 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         delete(service, className, null, conditions, "");
     }
 
-    protected abstract String getNextSequenceValueSql(String sequenceName);
-
     @Override
     public String getNextSequenceValue(Service service, String sequenceName) throws DaoException {
         String sql = getNextSequenceValueSql(sequenceName);
@@ -540,23 +525,17 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         }
     }
 
-    protected abstract String dropCollectionSQL(String collectionName);
-
     @Override
     public void dropCollection(Service service, String collectionName) throws DaoException {
         final String sql = dropCollectionSQL(collectionName);
         execute(service, sql);
     }
 
-    protected abstract String dropPrimaryKeySQL(String collectionName);
-
     @Override
     public void dropPrimaryKey(Service service, String collectionName) throws DaoException {
         final String sql = dropPrimaryKeySQL(collectionName);
         execute(service, sql);
     }
-
-    protected abstract String addPrimaryKeySQL(String collectionName, List<String> primaryKeyColumns);
 
     @Override
     public void addPrimaryKey(Service service, String collectionName, List<String> primaryKeyColumns)
@@ -566,17 +545,12 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         execute(service, sql);
     }
 
-    protected abstract String alterColumnTypeSQL(String collectionName, String columnName, String columnType)
-            throws DatabaseException;
-
     @Override
     public void alterColumnType(Service service, String collectionName, String columnName, String columnType)
             throws DaoException {
         final String sql = alterColumnTypeSQL(collectionName, columnName, columnType);
         execute(service, sql);
     }
-
-    protected abstract String setColumnNullableSQL(String collectionName, String columnName, boolean nullable);
 
     @Override
     public void setColumnNullable(Service service, String collectionName, String columnName, boolean nullable)
@@ -585,17 +559,11 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         execute(service, sql);
     }
 
-    protected abstract String createSequenceSQL(String sequenceName);
-
     @Override
     public void createSequence(Service service, String sequenceName) throws DaoException {
         final String sql = createSequenceSQL(sequenceName);
         execute(service, sql);
     }
-
-    protected abstract String addColumnUniqueSQL(String collectionName, String columnName);
-
-    protected abstract String dropColumnUniqueSQL(String collectionName, String columnName);
 
     @Override
     public void dropColumnUnique(Service service, String collectionName, String columnName) throws DaoException {
@@ -613,10 +581,6 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         }
     }
 
-    protected abstract String addUniqueSQL(String collectionName, String[] columnName);
-
-    protected abstract String dropUniqueSQL(String collectionName);
-
     @Override
     public void setUnique(Service service, String collectionName, String[] columnName)
             throws DaoException {
@@ -628,23 +592,12 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
         }
     }
 
-    protected abstract String createCollectionSQL(String collectionName);
-
-    protected abstract String addColumnSQL(String collectionName, String columnName, String columnType)
-            throws DatabaseException;
-
     protected void addColumn(Service service, String collectionName, String fieldName, String mappingType)
             throws DatabaseException, DaoException {
         final String addColumnSql = addColumnSQL(collectionName, fieldName, mappingType);
         execute(service, addColumnSql);
         alterColumnType(service, collectionName, fieldName, mappingType);
     }
-
-
-    protected abstract String addForeignKeySQL(String collectionName, String columnName, String referenceCollection,
-                                              String referenceColumn) throws DatabaseException;
-
-    protected abstract String dropForeignKeySQL(String collectionName, String columnName);
 
     @Override
     public void dropForeignKey(Service service, String collectionName, String columnName) throws DaoException {
