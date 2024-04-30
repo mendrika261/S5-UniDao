@@ -3,7 +3,7 @@ package mg.uniDao.core;
 import mg.uniDao.exception.DaoException;
 import mg.uniDao.exception.DatabaseException;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 /**
@@ -76,7 +76,7 @@ public interface Database {
       * @return true if the collection exists, false otherwise
       * @throws DaoException if the collection existence check fails
       */
-     boolean existsById(Service service, Class<?> className, String id) throws DaoException;
+     boolean existsById(Service service, Class<?> className, Object id) throws DaoException;
 
      /**
       * Create an object in the database if it does not exist, update it if it does.
@@ -143,7 +143,7 @@ public interface Database {
       * @param <T> the type of the object
       * @throws DaoException if the collection finding fails
       */
-     <T> T find(Service service, Class<?> className, Object conditionObject, HashMap<String, Object> conditions,
+     <T> T find(Service service, Class<?> className, Object conditionObject, LinkedHashMap<String, Object> conditions,
                 String condition, String... joins)
              throws DaoException;
 
@@ -183,7 +183,7 @@ public interface Database {
       * @param <T> the type of the object
       * @throws DaoException if the collection finding fails
       */
-     <T> T findById(Service service, Class<?> className, String id, String... joins) throws DaoException;
+     <T> T findById(Service service, Class<?> className, Object id, String... joins) throws DaoException;
 
      /**
       * Update an object in the database.
@@ -195,7 +195,7 @@ public interface Database {
       * @throws DaoException if the collection update fails
       */
      void update(Service service, Object newObject, Object conditionObject,
-                 HashMap<String, Object> conditions, String condition, int action)
+                 LinkedHashMap<String, Object> conditions, String condition, int action)
              throws DaoException;
 
      /**
@@ -226,7 +226,7 @@ public interface Database {
       * @param id the id of the object to be updated
       * @throws DaoException if the collection update fails
       */
-     void updateById(Service service, Object newObject, String id) throws DaoException;
+     void updateById(Service service, Object newObject, Object id) throws DaoException;
 
      /**
       * Delete an object in the database.
@@ -238,7 +238,7 @@ public interface Database {
       * @throws DaoException if the collection deletion fails
       */
      void delete(Service service, Class<?> className, Object conditionObject,
-                 HashMap<String, Object> conditions, String condition) throws DaoException;
+                 LinkedHashMap<String, Object> conditions, String condition) throws DaoException;
 
      /**
       * Delete an object in the database.
@@ -267,7 +267,7 @@ public interface Database {
       * @param id the id of the object to be deleted
       * @throws DaoException if the collection deletion fails
       */
-     void deleteById(Service service, Class<?> className, String id) throws DaoException;
+     void deleteById(Service service, Class<?> className, Object id) throws DaoException;
 
      /**
       * Get the next sequence value.

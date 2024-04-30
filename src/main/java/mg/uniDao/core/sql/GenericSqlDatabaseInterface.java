@@ -9,14 +9,14 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 public interface GenericSqlDatabaseInterface extends Database {
-    void prepareStatement(PreparedStatement preparedStatement, HashMap<String, Object> attributes)
+    void prepareStatement(PreparedStatement preparedStatement, LinkedHashMap<String, Object> attributes)
             throws IllegalAccessException, InvocationTargetException, SQLException;
 
-    void execute(Service service, String query, HashMap<String, Object> parameters) throws DaoException;
+    void execute(Service service, String query, LinkedHashMap<String, Object> parameters) throws DaoException;
 
     String getNextSequenceValue(Service service, String sequenceName) throws DaoException;
     void dropCollection(Service service, String collectionName) throws DaoException;
@@ -37,14 +37,14 @@ public interface GenericSqlDatabaseInterface extends Database {
     void dropForeignKey(Service service, String collectionName, String columnName) throws DaoException;
 
 
-    String createSQL(String collectionName, HashMap<String, Object> attributes);
+    String createSQL(String collectionName, LinkedHashMap<String, Object> attributes);
     String findListWithLimitSQL(String collectionName, String extraCondition,
                                                    List<Joiner> joiners);
-    String findSQL(String collectionName, HashMap<String, Object> conditions,
+    String findSQL(String collectionName, LinkedHashMap<String, Object> conditions,
                                       String extraCondition, List<Joiner> joiners);
-    String updateSQL(String collectionName, HashMap<String, Object> attributes,
-                     HashMap<String, Object> conditions, String extraCondition);
-    String deleteSQL(String collectionName, HashMap<String, Object> conditions, String extraCondition);
+    String updateSQL(String collectionName, LinkedHashMap<String, Object> attributes,
+                     LinkedHashMap<String, Object> conditions, String extraCondition);
+    String deleteSQL(String collectionName, LinkedHashMap<String, Object> conditions, String extraCondition);
     String getNextSequenceValueSql(String sequenceName);
     String createCollectionSQL(String collectionName);
     String addColumnSQL(String collectionName, String columnName, String columnType);

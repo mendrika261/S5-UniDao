@@ -18,7 +18,7 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface {
@@ -95,7 +95,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     }
 
     @Override
-    public void prepareStatement(PreparedStatement preparedStatement, HashMap<String, Object> attributes) {
+    public void prepareStatement(PreparedStatement preparedStatement, LinkedHashMap<String, Object> attributes) {
         int i = 1;
         for (String key : attributes.keySet()) {
             try {
@@ -112,7 +112,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     }
 
     @Override
-    public void execute(Service service, String query, HashMap<String, Object> parameters) throws DaoException {
+    public void execute(Service service, String query, LinkedHashMap<String, Object> parameters) throws DaoException {
         final Connection connection = (Connection) service.getAccess();
         final PreparedStatement preparedStatement;
         final long startTime = System.currentTimeMillis();
@@ -137,7 +137,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
 
     @Override
     public void execute(Service service, String query) throws DaoException {
-        execute(service, query, new HashMap<>());
+        execute(service, query, new LinkedHashMap<>());
     }
 
     @Override
@@ -224,7 +224,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     public void insert(Service service, Object object, int action) throws DaoException {
         Object actualId = ObjectUtils.getId(object);
         ObjectUtils.fillAutoSequence(service, object);
-        final HashMap<String, Object> attributes = ObjectUtils.getFieldsAnnotatedNameWithValues(object);
+        final LinkedHashMap<String, Object> attributes = ObjectUtils.getFieldsAnnotatedNameWithValues(object);
 
         if(ObjectUtils.isToHistorize(object.getClass())) {
             if(action == ACTION_UPDATE) {
@@ -255,7 +255,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     }
 
     @Override
-    public boolean existsById(Service service, Class<?> className, String id) throws DaoException {
+    public boolean existsById(Service service, Class<?> className, Object id) throws DaoException {
         return findById(service, className, id) != null;
     }
 
@@ -377,7 +377,7 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
 
     @Override
     public <T> T find(Service service, Class<?> className, Object conditionObject,
-                      HashMap<String, Object> conditions,
+                      LinkedHashMap<String, Object> conditions,
                       String condition, String... joins)
             throws DaoException {
         final Connection connection = (Connection) service.getAccess();
@@ -413,27 +413,28 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     public <T> T find(Service service, Object conditionObject, String... joins) throws DaoException {
         if (conditionObject == null)
             throw new DatabaseException("Condition cannot be null");
-        return find(service, conditionObject.getClass(), conditionObject, new HashMap<>(), "", joins);
+        return find(service, conditionObject.getClass(), conditionObject, new LinkedHashMap<>(), "", joins);
     }
 
     @Override
     public <T> T find(Service service, Class<?> className, String condition, String... joins)
             throws DaoException {
-        return find(service, className, null, new HashMap<>(), condition, joins);
+        return find(service, className, null, new LinkedHashMap<>(), condition, joins);
     }
 
     @Override
-    public <T> T findById(Service service, Class<?> className, String id, String... joins) throws DaoException {
-        final HashMap<String, Object> conditions = new HashMap<>();
+    public <T> T findById(Service service, Class<?> className, Object id, String... joins) throws DaoException {
+        final LinkedHashMap<String, Object> conditions = new LinkedHashMap<>();
         conditions.put(ObjectUtils.getPrimaryKeys(className).values().stream().toList().get(0), id);
         return find(service, className, null, conditions, "", joins);
     }
 
     @Override
     public void update(Service service, Object newObject, Object conditionObject,
-                       HashMap<String, Object> conditions, String condition, int action)
+                       LinkedHashMap<String, Object> conditions, String condition, int action)
             throws DaoException {
-        final HashMap<String, Object> values = ObjectUtils.getFieldsNotNullAnnotatedNameWithValues(newObject, true);
+        final LinkedHashMap<String, Object> values = ObjectUtils
+                .getFieldsNotNullAnnotatedNameWithValuesWithoutPk(newObject, true);
 
         if(ObjectUtils.isToHistorize(newObject.getClass())) {
             if(action == ACTION_UPDATE) {
@@ -454,24 +455,24 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
 
     @Override
     public void update(Service service, Object newObject, String condition) throws DaoException {
-        update(service, newObject, null, new HashMap<>(), condition, ACTION_UPDATE);
+        update(service, newObject, null, new LinkedHashMap<>(), condition, ACTION_UPDATE);
     }
 
     @Override
     public void update(Service service, Object newObject, Object conditionObject) throws DaoException {
-        update(service, conditionObject, newObject, new HashMap<>(), "", ACTION_UPDATE);
+        update(service, conditionObject, newObject, new LinkedHashMap<>(), "", ACTION_UPDATE);
     }
 
     @Override
-    public void updateById(Service service, Object object, String id) throws DaoException {
-        final HashMap<String, Object> conditions = new HashMap<>();
+    public void updateById(Service service, Object object, Object id) throws DaoException {
+        final LinkedHashMap<String, Object> conditions = new LinkedHashMap<>();
         conditions.put(ObjectUtils.getPrimaryKeys(object.getClass()).values().stream().toList().get(0), id);
         update(service, object, null, conditions, "", ACTION_UPDATE);
     }
 
     @Override
     public void delete(Service service, Class<?> className, Object conditionObject,
-                       HashMap<String, Object> conditions, String condition) throws DaoException {
+                       LinkedHashMap<String, Object> conditions, String condition) throws DaoException {
         if(ObjectUtils.isToHistorize(className)) {
             Object instance = ObjectUtils.newInstance(className);
             update(service, instance, conditionObject, conditions, condition, ACTION_DELETE);
@@ -488,17 +489,17 @@ public abstract class GenericSqlDatabase implements GenericSqlDatabaseInterface 
     public void delete(Service service, Object conditionObject) throws DaoException {
         if (conditionObject == null)
             throw new DatabaseException("Condition cannot be null");
-        delete(service, conditionObject.getClass(), conditionObject, new HashMap<>(), "");
+        delete(service, conditionObject.getClass(), conditionObject, new LinkedHashMap<>(), "");
     }
 
     @Override
     public void delete(Service service, Class<?> className, String condition) throws DaoException {
-        delete(service, className, null, new HashMap<>(), condition);
+        delete(service, className, null, new LinkedHashMap<>(), condition);
     }
 
     @Override
-    public void deleteById(Service service, Class<?> className, String id) throws DaoException {
-        final HashMap<String, Object> conditions = new HashMap<>();
+    public void deleteById(Service service, Class<?> className, Object id) throws DaoException {
+        final LinkedHashMap<String, Object> conditions = new LinkedHashMap<>();
         conditions.put(ObjectUtils.getPrimaryKeys(className).values().stream().toList().get(0), id);
         delete(service, className, null, conditions, "");
     }

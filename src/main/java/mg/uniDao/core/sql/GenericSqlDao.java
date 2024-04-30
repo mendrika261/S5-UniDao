@@ -93,7 +93,7 @@ public class GenericSqlDao {
         * @param joins the joins to use
         * @throws DaoException if an error occurs during the operation
         */
-    public <T> T getById(Service service, String id, String... joins) throws DaoException {
+    public <T> T getById(Service service, Object id, String... joins) throws DaoException {
         return service.getDatabase().findById(service, getClass(), id, joins);
     }
 

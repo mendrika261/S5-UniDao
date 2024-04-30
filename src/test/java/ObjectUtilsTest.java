@@ -1,3 +1,5 @@
+import mg.uniDao.provider.GenericSqlProvider;
+import mg.uniDao.util.FileUtils;
 import mg.uniDao.util.Format;
 import mg.uniDao.util.ObjectUtils;
 import mg.uniDao.exception.DaoException;
@@ -30,5 +32,12 @@ public class ObjectUtilsTest {
         Student student2 = Format.fromJson(json, Student.class);
         System.out.println(student2);
         assertEquals(student.toString(), student2.toString(), "Json format changed");
+    }
+
+    @Test
+    void toJson() throws DaoException {
+        System.out.println(Format.fromJson(FileUtils.getFileContentAsString("postgresql.json"),
+                GenericSqlProvider.class));
+
     }
 }

@@ -22,6 +22,20 @@
             <version>42.7.1</version>
             <scope>runtime</scope>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.mysql/mysql-connector-j -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>8.3.0</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/dev.mccue/guava-collect -->
+        <dependency>
+            <groupId>dev.mccue</groupId>
+            <artifactId>guava-collect</artifactId>
+            <version>33.1.0</version>
+        </dependency>
+
 
         <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api -->
         <dependency>

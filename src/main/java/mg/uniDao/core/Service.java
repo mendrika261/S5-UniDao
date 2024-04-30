@@ -77,8 +77,10 @@ public class Service {
      * End the connection to the database
      */
     public void endConnection() {
-        commit();
-        close();
+        try {
+            commit();
+            close();
+        } catch (Exception ignored) {}
         setClosed(true);
         NB_CONNECTION--;
         final long lifeDuration = System.currentTimeMillis() - creationTime;

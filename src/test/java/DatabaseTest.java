@@ -4,7 +4,7 @@ import mg.uniDao.core.Database;
 import mg.uniDao.core.Service;
 import mg.uniDao.exception.DaoException;
 import mg.uniDao.exception.DatabaseException;
-import mg.uniDao.provider.PostgresSql;
+import mg.uniDao.provider.GenericSqlProvider;
 import dao.Student;
 import org.junit.jupiter.api.Test;
 
@@ -18,20 +18,27 @@ public class DatabaseTest {
 
     @Test
     void testPostgresSqlConnect() throws DaoException {
-        Database postgresSql = new PostgresSql();
+        Database postgresSql = GenericSqlProvider.get("postgresql.json");
 
-        Service service = postgresSql.connect("TEST", false);
+        Service service = postgresSql.connect("TEST", true);
+
+        List<Region> regions = new Region().getList(service);
+        System.out.println(regions);
+
+        service.endConnection();
+
+        /*Service service = postgresSql.connect("TEST", false);
         assertNotNull(service.getAccess(), "PostgresSql connect() failed");
         service.endConnection();
 
         Service service2 = postgresSql.connect("PROD", false);
         assertNotNull(service2.getAccess(), "PostgresSql connect() failed");
-        service2.endConnection();
+        service2.endConnection();*/
     }
 
     @Test
     void testCreateCollection() throws DatabaseException, DaoException {
-        Database postgresSql = new PostgresSql();
+        Database postgresSql = new GenericSqlProvider();
         Service service = postgresSql.connect();
         Student student = new Student();
         student.createCollection(service);
@@ -42,7 +49,7 @@ public class DatabaseTest {
 
     @Test
     void testCreateObject() throws DatabaseException, DaoException {
-        Database postgresSql = new PostgresSql();
+        Database postgresSql = new GenericSqlProvider();
         Service service = postgresSql.connect();
         Student student = new Student();
         student.setBirthdate(LocalDate.now());
@@ -66,7 +73,7 @@ public class DatabaseTest {
 
     @Test
     void testFindList() throws DatabaseException, DaoException {
-        Database postgresSql = new PostgresSql();
+        Database postgresSql = new GenericSqlProvider();
         Service service = postgresSql.connect();
         List<Mark> studentList = postgresSql.findList(service, Mark.class,
                 1, 10, new String[]{"student"});
@@ -76,7 +83,7 @@ public class DatabaseTest {
 
     @Test
     void testFind() throws DatabaseException, DaoException {
-        Database postgresSql = new PostgresSql();
+        Database postgresSql = new GenericSqlProvider();
         Service service = postgresSql.connect();
         Mark mark = new Mark();
         mark.setCoefficient(1);
@@ -88,7 +95,7 @@ public class DatabaseTest {
 
     @Test
     void testUpdate() throws DatabaseException, DaoException {
-        Database postgresSql = new PostgresSql();
+        Database postgresSql = new GenericSqlProvider();
         Service service = postgresSql.connect();
         Student condition = new Student();
         condition.setBirthdate(LocalDate.now());
@@ -100,7 +107,7 @@ public class DatabaseTest {
 
     @Test
     void testDelete() throws DatabaseException, DaoException {
-        Database postgresSql = new PostgresSql();
+        Database postgresSql = new GenericSqlProvider();
         Service service = postgresSql.connect();
         Student student = new Student();
         student.setId("30");

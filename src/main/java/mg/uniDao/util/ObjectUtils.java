@@ -52,7 +52,7 @@ public class ObjectUtils {
         String fieldName = field.getName();
         Object castedValue = getRealValue(field, value);
         try {
-            final Method setter = object.getClass().getMethod("set" + Format.upperFirst(fieldName), castedValue.getClass());
+            final Method setter = object.getClass().getMethod("set" + Format.upperFirst(fieldName), field.getType());
             setter.invoke(object, castedValue);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {
             field.setAccessible(true);
@@ -77,8 +77,8 @@ public class ObjectUtils {
     }
 
     // field name: field value
-    public static HashMap<String, Object> getFieldsNamesWithValues(Object object) throws DaoException {
-        final HashMap<String, Object> attributes = new HashMap<>();
+    public static LinkedHashMap<String, Object> getFieldsNamesWithValues(Object object) throws DaoException {
+        final LinkedHashMap<String, Object> attributes = new LinkedHashMap<>();
         for(final Field field: getDeclaredFields(object.getClass())) {
             final String fieldName = field.getName();
             attributes.put(fieldName, getFieldValue(object, field));
@@ -86,8 +86,8 @@ public class ObjectUtils {
         return attributes;
     }
 
-    public static HashMap<String, Object> getFieldsNamesWithValuesNonNull(Object object) throws DaoException {
-        final HashMap<String, Object> attributes = new HashMap<>();
+    public static LinkedHashMap<String, Object> getFieldsNamesWithValuesNonNull(Object object) throws DaoException {
+        final LinkedHashMap<String, Object> attributes = new LinkedHashMap<>();
         for(final Field field: getDeclaredFields(object.getClass())) {
             final String fieldName = field.getName();
             Object fieldValue = getFieldValue(object, field);
@@ -104,8 +104,8 @@ public class ObjectUtils {
         return Format.toSnakeCase(field.getName());
     }
 
-    public static HashMap<String, Object> getFieldsAnnotatedNameWithValues(Object object) throws DaoException {
-        final HashMap<String, Object> attributes = new HashMap<>();
+    public static LinkedHashMap<String, Object> getFieldsAnnotatedNameWithValues(Object object) throws DaoException {
+        final LinkedHashMap<String, Object> attributes = new LinkedHashMap<>();
         for(final Field field: getDeclaredFields(object.getClass())) {
             final String fieldName = getAnnotatedFieldName(field);
             if(field.isAnnotationPresent(Reference.class)) {
@@ -120,9 +120,9 @@ public class ObjectUtils {
         return attributes;
     }
 
-    public static HashMap<String, Object> getFieldsNotNullAnnotatedNameWithValues(Object object, boolean throwPrimitiveType)
+    public static LinkedHashMap<String, Object> getFieldsNotNullAnnotatedNameWithValues(Object object, boolean throwPrimitiveType)
             throws DaoException {
-        final HashMap<String, Object> attributes = new HashMap<>();
+        final LinkedHashMap<String, Object> attributes = new LinkedHashMap<>();
 
         if (object == null)
             return attributes;
@@ -140,7 +140,30 @@ public class ObjectUtils {
         return attributes;
     }
 
-    public static HashMap<String, Object> getFieldsNotNullAnnotatedNameWithValues(Object object) throws DaoException {
+    public static LinkedHashMap<String, Object> getFieldsNotNullAnnotatedNameWithValuesWithoutPk(Object object, boolean throwPrimitiveType)
+            throws DaoException {
+        final LinkedHashMap<String, Object> attributes = new LinkedHashMap<>();
+
+        if (object == null)
+            return attributes;
+
+        final Field[] fields = getDeclaredFields(object.getClass());
+        for(final Field field: fields) {
+            if(field.isAnnotationPresent(mg.uniDao.annotation.Field.class)
+                    && field.getAnnotation(mg.uniDao.annotation.Field.class).isPrimaryKey())
+                continue;
+            if(throwPrimitiveType && field.getType().isPrimitive())
+                throw new DaoException("Object condition work only with object without primitive field: \n" +
+                        Arrays.toString(Arrays.stream(fields).toArray()));
+            final String fieldName = getAnnotatedFieldName(field);
+            final Object fieldValue = getFieldValue(object, field);
+            if (fieldValue != null)
+                attributes.put(fieldName, fieldValue);
+        }
+        return attributes;
+    }
+
+    public static LinkedHashMap<String, Object> getFieldsNotNullAnnotatedNameWithValues(Object object) throws DaoException {
         return getFieldsNotNullAnnotatedNameWithValues(object, false);
     }
 
@@ -166,8 +189,8 @@ public class ObjectUtils {
     }
 
     // field name: annotated field name
-    public static HashMap<String, String> getPrimaryKeys(Class<?> objectClass) throws DaoException {
-        final HashMap<String, String> primaryKeys = new HashMap<>();
+    public static LinkedHashMap<String, String> getPrimaryKeys(Class<?> objectClass) throws DaoException {
+        final LinkedHashMap<String, String> primaryKeys = new LinkedHashMap<>();
         final Field[] fields = getDeclaredFields(objectClass);
         for(Field field: fields) {
             if (field.isAnnotationPresent(mg.uniDao.annotation.Field.class)
@@ -182,8 +205,8 @@ public class ObjectUtils {
     }
 
     // field name: value
-    public static HashMap<String, Object> getPrimaryKeysWithValue(Object object) throws DaoException {
-        final HashMap<String, Object> primaryKeys = new HashMap<>();
+    public static LinkedHashMap<String, Object> getPrimaryKeysWithValue(Object object) throws DaoException {
+        final LinkedHashMap<String, Object> primaryKeys = new LinkedHashMap<>();
         final Field[] fields = getDeclaredFields(object.getClass());
         for(Field field: fields) {
             if (field.isAnnotationPresent(mg.uniDao.annotation.Field.class)
@@ -246,13 +269,13 @@ public class ObjectUtils {
         }
     }
 
-    public static String getId(Object object) {
+    public static Object getId(Object object) {
         final Field[] fields = getDeclaredFields(object.getClass());
         for(Field field: fields) {
             if (field.isAnnotationPresent(mg.uniDao.annotation.Field.class)
                     && field.getAnnotation(mg.uniDao.annotation.Field.class).isPrimaryKey()) {
                 try {
-                    return (String) ObjectUtils.getFieldValue(object, field);
+                    return ObjectUtils.getFieldValue(object, field);
                 } catch (DaoException ignored) {}
             }
         }
