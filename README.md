@@ -1,7 +1,7 @@
 # Overview
 
 The goal of this project is to create a cross-database Data Access Object, with database generation and migration capabilities.
-> It is used with [this web framework](https://github.com/mendrika261/S4-Java-Framework)
+> 🎉 It is now integrated in [this web framework](https://github.com/mendrika261/S4-Java-Framework)
 
 ## Example of usage
 ```java
