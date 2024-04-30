@@ -1,31 +1,36 @@
-# UniDAO
+# Overview
 
-The goal of this project is to create a straightforward and fully operational cross-database platform (Data Access Object - DAO) that can manage data across different types of databases, including SQL and NoSQL.
+The goal of this project is to create a cross-database Data Access Object, with database generation and migration capabilities.
+> It is used with [this web framework](https://github.com/mendrika261/S4-Java-Framework)
 
-## Documentation
-🛠️ Work in progress... ⌛️
+## Example of usage
+```java
+package project.entity;
 
-## Getting Started
+import mg.uniDao.annotation.Field;
+import mg.uniDao.annotation.AutoSequence;
+import mg.uniDao.core.sql.GenericSqlDao;
+import mg.uniDao.annotation.Collection;
+
+
+@Collection
+public class Region extends GenericSqlDao {
+	@Field(name = "region_id", isPrimaryKey = true)
+	@AutoSequence(name = "region")
+	private Integer regionId;
+	@Field(name = "region_description")
+	private String regionDescription;
+```
+
+## Getting Started for dev
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
-
-### Prerequisites
-
-You need to have the following installed on your machine:
-
-- Java JDK
-- Maven
-- Any IDE that supports Java and Maven, or a text editor and terminal
 
 ### Installing
 
 1. Clone the repository to your local machine.
-2. Open the project in your IDE.
-3. Run `mvn clean install` to install the dependencies.
-
-## Running the tests
-
-The project contains a `DatabaseTest.java` file which contains unit tests for the project. You can run these tests by right-clicking on the file in your IDE and selecting `Run 'DatabaseTest'`.
+2. Run `mvn clean install` to install dependencies.
+3. (For building jar) Run `mvn package -DskipTests=true` to build the project.
 
 ## Built With
 
